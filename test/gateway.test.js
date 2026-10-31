@@ -8,14 +8,15 @@ import { loadConfig } from '../src/config/env.js';
 const SECRET = 'test-secret-that-is-long-enough-for-hs256-1234567890';
 const ISSUER = 'smartgn-iam-service';
 const AUDIENCE = 'smartgn-api';
+const ACCOUNT = '11111111-1111-4111-8111-111111111111';
 
 const listen = (server) =>
   new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server.address().port)));
 
 const sign = (claims = {}, opts = {}) =>
-  jwt.sign({ role: 'USER', ...claims }, SECRET, {
+  jwt.sign({ role: 'USER', accountId: ACCOUNT, sessionVersion: 0, ...claims }, SECRET, {
     algorithm: 'HS256',
-    subject: 'user-1',
+    subject: ACCOUNT,
     issuer: ISSUER,
     audience: [AUDIENCE],
     expiresIn: '5m',
@@ -145,7 +146,7 @@ test('/installers is SUPERADMIN only', async () => {
   const prefixed = await fetch(`${gw}/api/v1/installers`, {
     headers: { authorization: `Bearer ${sign({ role: 'ROLE_SUPERADMIN' })}` },
   });
-  assert.equal(prefixed.status, 201);
+  assert.equal(prefixed.status, 401);
 });
 
 test('public routes need no token', async () => {
@@ -163,7 +164,7 @@ test('public routes need no token', async () => {
 });
 
 test('unavailable backend -> controlled 503 without internals', async () => {
-  const res = await fetch(`${gw}/api/v1/checkout/session`, { method: 'POST', body: '{}' });
+  const res = await fetch(`${gw}/api/v1/checkout/orders`, { method: 'POST', body: '{}' });
   assert.equal(res.status, 503);
   const text = await res.text();
   assert.ok(!/ECONNREFUSED|127\.0\.0\.1|stack/i.test(text));

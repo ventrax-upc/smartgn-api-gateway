@@ -14,7 +14,7 @@ export function createRateLimiters({ rateLimit: cfg }) {
   const general = rateLimit({
     ...common,
     limit: cfg.max,
-    skip: (req) => req.method === 'OPTIONS' || req.path === '/health',
+    skip: (req) => req.method === 'OPTIONS' || ['/health', '/ready'].includes(req.path),
   });
 
   // Stricter limit against credential stuffing / brute force.

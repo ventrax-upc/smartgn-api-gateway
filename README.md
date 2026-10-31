@@ -1,62 +1,29 @@
 # SmartGN API Gateway
 
-Single entry point for the SmartGN web clients (Angular SPA and Landing Page). Built with Node.js and Express.
+Stateless Node.js 22 / Express HTTP entry point for the SmartGN services. Public routes retain their path, method, body and upstream status. The Gateway verifies IAM JWTs, CORS origins and request limits. Current sessions, principal/delegated account rules, ownership and meter/function permissions remain enforced by each owning service. It has no business database, gRPC server or MQTT ingestion endpoint.
 
-## Responsibilities (AD-12)
+## Local execution
 
-- Route requests by prefix to the owning microservice, without altering path, method, status code or body.
-- Validate the JWT issued by IAM on protected routes (HS256, issuer, audience, expiry). Invalid or missing token returns `401`.
-- Restrict `/api/v1/installers/**` to `SUPERADMIN` (`403` otherwise).
-- CORS, rate limiting (stricter on sign-in), correlation id.
-- Controlled errors: `503` (service down), `504` (timeout), `502` (bad gateway), without leaking internals.
-- Never publish `/internal/**`.
+Run `./scripts/start-local.ps1 -Integrated` to build and start the five services and their isolated storage dependencies in Docker. The sibling repositories must be present. The integrated composition uses the existing shared environment in `../smartgn-payments-billing/.env` and prepares the Gateway's ignored `.env` with the matching IAM key. Existing secrets and volumes are preserved.
 
-Resource-level authorization (ownership, subuser grants) remains in each microservice. The Gateway is stateless and has no database. IoT telemetry (MQTT) does not go through the Gateway.
-
-## Route table
-
-| Service | Prefixes |
+| Component | Local URL |
 |---|---|
-| IAM | `/api/v1/auth`, `/profiles`, `/subusers` |
-| Installation | `/api/v1/properties`, `/supplypoints`, `/installers`, `/installations`, `/devices`, `/meters` |
-| Support | `/api/v1/support` |
-| Billing | `/api/v1/checkout`, `/payment-methods`, `/subscriptions`, `/billing-documents` (also `/billingdocuments`), `/payments` |
+| API Gateway | http://localhost:8000/swagger-ui/index.html |
+| IAM | http://localhost:18080/swagger-ui/index.html |
+| Installation & Device Management | http://localhost:18081/swagger-ui/index.html |
+| Support & Maintenance | http://localhost:8082/swagger-ui/index.html |
+| Payments & Billing | http://localhost:28083/swagger-ui/index.html |
 
-Public routes (no JWT): `POST /api/v1/auth/{sign-in,activate-password,forgot-password,reset-password}`, `POST /api/v1/installations`, `/api/v1/checkout/**`.
+`./scripts/start-local.ps1` starts only the Gateway and uses host-exposed backend ports. `-SkipBuild` reuses existing images. For host development use `npm ci --ignore-scripts` followed by `npm run dev` after preparing `.env`.
 
-To add a route or change a public rule, edit `src/routes/route-table.js` and `src/middlewares/jwt-validator.js`.
+## Verification
 
-## Run locally
+`./scripts/test.ps1` runs middleware and routing tests in Node 22 Docker. `./scripts/smoke-local.ps1` executes Billing, Support and device-provisioning acceptance through the Gateway with real local IAM, Installation and EMQX. Provider confirmations, activation delivery and synthetic integration events are explicit fixtures. The Billing suite restarts Billing to verify durable reconciliation; run it only against the local verification environment.
 
-```bash
-npm install
-cp .env.example .env     # set JWT_SECRET = the same secret used by IAM
-npm run dev              # http://localhost:8000
-```
+The Gateway OpenAPI aggregates the public contracts of its four backend services. Routing tests exercise all current public operations against a controlled upstream; these checks are separate from business acceptance with the real local services.
 
-Start the services first (IAM 18080, Installation 18081, Support 8082, Billing 28083 in the integrated setup).
+## API documentation
 
-## Run with Docker
+Swagger UI is available at `/swagger-ui/index.html`, with the public OpenAPI contract at `/v3/api-docs`. `/health` reports process liveness; `/ready` checks all four backends and returns 503 when a dependency is unavailable. Neither exposes credentials or private dependency URLs. `/internal/**` routes are not published.
 
-```bash
-cp .env.example .env
-docker compose up --build
-```
-
-The compose file points the services to `host.docker.internal`.
-
-## Environment variables
-
-See `.env.example`. `JWT_SECRET` is required, must match IAM, and must never be committed.
-
-## Tests
-
-```bash
-npm test
-```
-
-Covers valid routing, `401` for missing/expired/forged tokens, backend `403` passthrough, SUPERADMIN restriction, public routes, `503`/`504`, `/internal` blocking, CORS and rate limiting.
-
-## Docs
-
-OpenAPI summary in `docs/openapi.yaml`. Health check: `GET /health`.
+See [architecture](docs/architecture.md), [contracts](docs/contracts.md), [local development](docs/local-development.md) and [service overview](docs/service-overview.md). Secrets belong only in ignored local environments. HTTP and in-memory rate limits are intended for local execution; production TLS termination, trusted ingress and a shared rate-limit store require deployment configuration.

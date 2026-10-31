@@ -12,7 +12,12 @@ const REASONS = {
 
 export function sendError(req, res, status, message) {
   if (res.headersSent) return;
-  res.status(status).json({
+  if (status === 401) res.setHeader('WWW-Authenticate', 'Bearer');
+  res.status(status).type('application/problem+json').json({
+    type: 'about:blank',
+    title: REASONS[status] ?? 'Error',
+    detail: message,
+    instance: req.path,
     status,
     error: REASONS[status] ?? 'Error',
     message,
@@ -27,6 +32,6 @@ export function notFoundHandler(req, res) {
 // eslint-disable-next-line no-unused-vars
 export function errorHandler(err, req, res, _next) {
   // Never leak internals: log server side without secrets, answer generic.
-  console.error(`[${req.id}] unhandled error: ${err.message}`);
+  console.error(`[${req.id}] unhandled gateway error`);
   sendError(req, res, 500, 'Unexpected error');
 }

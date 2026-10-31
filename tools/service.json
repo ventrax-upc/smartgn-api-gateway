@@ -1,0 +1,5 @@
+{
+  "service": "smartgn-api-gateway",
+  "runtime": "node:22-alpine",
+  "port": 8000
+}

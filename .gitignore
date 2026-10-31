@@ -1,5 +1,11 @@
-node_modules
+node_modules/
 .env
+.env.*
+!.env.example
+.local/
+coverage/
 *.log
-
 .idea/
+__pycache__/
+*.pyc
+AGENTS.md
