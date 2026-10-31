@@ -1,0 +1,170 @@
+name: smartgn-billing-integration
+services:
+  db:
+    image: postgres:17.6
+    environment: {POSTGRES_DB: billing_db, POSTGRES_USER: smartgn_billing, POSTGRES_PASSWORD: '${DB_PASSWORD}'}
+    volumes: [billing-integration-data:/var/lib/postgresql/data]
+    healthcheck: {test: [CMD-SHELL, 'pg_isready -U smartgn_billing -d billing_db'], interval: 2s, timeout: 2s, retries: 30}
+  broker:
+    volumes: !override ["../smartgn-payments-billing/.local/mqtt:/mosquitto/config:ro", "mqtt-data:/mosquitto/data"]
+    extends: {file: ../smartgn-payments-billing/compose.yml, service: broker}
+    ports: !override ["127.0.0.1:1885:1883"]
+  billing:
+    build: ../smartgn-payments-billing
+    volumes: !override ["../smartgn-payments-billing/.local/tax.p12:/run/secrets/tax.p12:ro"]
+    extends: {file: ../smartgn-payments-billing/compose.yml, service: billing}
+    ports: !override ["127.0.0.1:28083:8083"]
+    environment:
+      SUPPORT_BASE_URL: http://support:8082
+      IAM_BASE_URL: http://iam:8080
+      INSTALLATION_BASE_URL: http://installation:8081
+      MQTT_CLIENT_ID: smartgn-billing-integration
+    depends_on:
+      db: {condition: service_healthy}
+  iam-db:
+    image: postgres:18
+    environment: {POSTGRES_DB: iam_db, POSTGRES_USER: smartgn_iam, POSTGRES_PASSWORD: '${DB_PASSWORD}'}
+    volumes: [iam-integration-data:/var/lib/postgresql]
+    healthcheck: {test: [CMD-SHELL, 'pg_isready -U smartgn_iam -d iam_db'], interval: 2s, timeout: 2s, retries: 30}
+  installation-db:
+    image: postgres:17.6
+    environment: {POSTGRES_DB: installation_db, POSTGRES_USER: smartgn_installation, POSTGRES_PASSWORD: '${DB_PASSWORD}'}
+    volumes: [installation-integration-data:/var/lib/postgresql/data]
+    healthcheck: {test: [CMD-SHELL, 'pg_isready -U smartgn_installation -d installation_db'], interval: 2s, timeout: 2s, retries: 30}
+  iam:
+    build: ../smartgn-iam
+    ports: ["127.0.0.1:18080:8080"]
+    environment:
+      DB_URL: jdbc:postgresql://iam-db:5432/iam_db
+      DB_USERNAME: smartgn_iam
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      DELIVERY_ENCRYPTION_KEY: ${DELIVERY_ENCRYPTION_KEY}
+      NOTIFICATION_DELIVERY_URL: http://delivery:8091/local-contracts/notifications
+      NOTIFICATION_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      INSTALLATION_BASE_URL: http://installation:8081
+      SMARTGN_BILLING_BASE_URL: http://billing:8083
+      SMARTGN_BILLING_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      IDENTITY_EVENT_SINK_URL: http://delivery:8091/local-contracts/events
+      IDENTITY_EVENT_SINK_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      SPRING_PROFILES_ACTIVE: local-bootstrap
+      BOOTSTRAP_SUPERADMIN_EMAIL: admin@smartgn.test
+      BOOTSTRAP_SUPERADMIN_PASSWORD: ${BOOTSTRAP_SUPERADMIN_PASSWORD}
+    depends_on: {iam-db: {condition: service_healthy}}
+  installation:
+    build: ../smartgn-installation-device-management
+    ports: ["127.0.0.1:18081:8081"]
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://installation-db:5432/installation_db
+      SPRING_DATASOURCE_USERNAME: smartgn_installation
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      DEVICE_CREDENTIAL_KEY: ${DEVICE_CREDENTIAL_KEY}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      EMQX_PASSWORD: ${MQTT_PASSWORD}
+      EMQX_API_URL: http://device-broker:18083/api/v5
+      EMQX_API_KEY: ${DEVICE_BROKER_API_KEY}
+      EMQX_API_SECRET: ${DEVICE_BROKER_API_SECRET}
+      TELEMETRY_BASE_URL: http://telemetry-fixture:8090
+      SMARTGN_IAM_BASE_URL: http://iam:8080
+      SMARTGN_EVENTS_SINK_URL: http://billing:8083/internal/v1/events
+      SMARTGN_EVENTS_SINK_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+    depends_on: {installation-db: {condition: service_healthy}}
+  delivery:
+    image: python:3.13-slim
+    command: [python, /tools/local-delivery-fixture.py]
+    ports: ["127.0.0.1:18091:8091"]
+    environment:
+      FIXTURE_ADMIN_TOKEN: ${FIXTURE_ADMIN_TOKEN}
+      NOTIFICATION_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      EVENT_FIXTURE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+    volumes: ["../smartgn-payments-billing/tools:/tools:ro", "delivery-data:/data"]
+  support-db:
+    image: postgres:17.6
+    environment:
+      POSTGRES_DB: smartgn_support_db
+      POSTGRES_USER: smartgn_support
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes: [support-integration-db:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U smartgn_support -d smartgn_support_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  support:
+    build: ${SUPPORT_REPO_PATH:-../smartgn-support-maintenance}
+    environment:
+      DB_URL: jdbc:postgresql://support-db:5432/smartgn_support_db
+      DB_PASSWORD: ${DB_PASSWORD}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      IAM_BASE_URL: http://iam:8080
+      INSTALLATION_BASE_URL: http://installation:8081
+      BILLING_BASE_URL: http://billing:8083
+      PHOTO_PATH: /data/photos
+      MQTT_URL: ${SUPPORT_MQTT_URL:-}
+      MQTT_USERNAME: support-service
+      MQTT_PASSWORD: ${MQTT_SUPPORT_PASSWORD}
+      MQTT_CLIENT_ID: smartgn-support-integration
+    ports: ["127.0.0.1:8082:8082"]
+    volumes: [support-integration-photos:/data]
+    depends_on:
+      support-db: {condition: service_healthy}
+  api-gateway:
+    build: ../smartgn-api-gateway
+    env_file: ../smartgn-api-gateway/.env
+    environment:
+      API_PORT: 8000
+      JWT_SECRET: ${JWT_SECRET}
+      IAM_URL: http://iam:8080
+      INSTALLATION_URL: http://installation:8081
+      SUPPORT_URL: http://support:8082
+      BILLING_URL: http://billing:8083
+    ports: ["127.0.0.1:8000:8000"]
+    init: true
+    depends_on:
+      iam: {condition: service_healthy}
+      installation: {condition: service_healthy}
+      support: {condition: service_healthy}
+      billing: {condition: service_healthy}
+  device-broker:
+    image: emqx/emqx:5.8.8
+    environment:
+      EMQX_DASHBOARD__DEFAULT_USERNAME: admin
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${MQTT_PASSWORD}
+      EMQX_API_KEY__BOOTSTRAP_FILE: /opt/emqx/etc/bootstrap-api-keys
+      EMQX_AUTHORIZATION__NO_MATCH: deny
+      EMQX_AUTHORIZATION__CACHE__ENABLE: "false"
+      EMQX_AUTHORIZATION__SOURCES: '[{type = built_in_database, enable = true}]'
+      EMQX_AUTHENTICATION: '[{mechanism = password_based, backend = built_in_database, user_id_type = username}]'
+    volumes:
+      - ../smartgn-payments-billing/.local/device-broker/bootstrap-api-keys:/opt/emqx/etc/bootstrap-api-keys:ro
+      - device-broker-data:/opt/emqx/data
+    ports: ["127.0.0.1:1886:1883", "127.0.0.1:18086:18083"]
+    healthcheck:
+      test: [CMD-SHELL, '/opt/emqx/bin/emqx ctl status']
+      interval: 10s
+      timeout: 10s
+      start_period: 30s
+      retries: 30
+  telemetry-fixture:
+    image: python:3.13-slim
+    command: [python, /tools/local-telemetry-simulator.py]
+    environment:
+      TELEMETRY_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      SIMULATOR_ADMIN_TOKEN: ${FIXTURE_ADMIN_TOKEN}
+      SIMULATOR_DB: /data/telemetry.sqlite
+      PORT: "8090"
+    volumes: ["../smartgn-installation-device-management/tools:/tools:ro", "telemetry-fixture-data:/data"]
+    ports: ["127.0.0.1:18090:8090"]
+volumes:
+  billing-data:
+  mqtt-data:
+  billing-integration-data:
+  iam-integration-data:
+  installation-integration-data:
+  delivery-data:
+  support-integration-db:
+  support-integration-photos:
+  device-broker-data:
+  telemetry-fixture-data:

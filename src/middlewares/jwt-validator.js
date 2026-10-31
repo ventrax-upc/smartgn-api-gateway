@@ -1,73 +1,35 @@
 import jwt from 'jsonwebtoken';
 import { sendError } from './http-errors.js';
+import { findContract } from '../routes/contracts.js';
 
-const API = '/api/v1';
-
-// Public routes (no JWT). Everything else requires a valid token.
-const PUBLIC_RULES = [
-  { method: 'POST', path: `${API}/auth/sign-in` },
-  { method: 'POST', path: `${API}/auth/activate-password` },
-  { method: 'POST', path: `${API}/auth/forgot-password` },
-  { method: 'POST', path: `${API}/auth/reset-password` },
-  { method: 'POST', path: `${API}/installations` },
-  { prefix: `${API}/checkout` },
-];
-
-// Role restrictions enforced at the perimeter. Resource-level authorization
-// (ownership, subuser grants) stays in each microservice (AD-12).
-const ROLE_RULES = [{ prefix: `${API}/installers`, roles: ['SUPERADMIN'] }];
-
-const stripTrailingSlash = (p) => (p.length > 1 && p.endsWith('/') ? p.slice(0, -1) : p);
-const hasPrefix = (path, prefix) => path === prefix || path.startsWith(`${prefix}/`);
-
-export function isPublic(method, rawPath) {
-  const path = stripTrailingSlash(rawPath);
-  return PUBLIC_RULES.some((rule) =>
-    rule.prefix ? hasPrefix(path, rule.prefix) : rule.method === method && rule.path === path,
-  );
-}
-
+export const isPublic = (method, path) => findContract(method, path)?.public === true;
 export function extractRoles(payload) {
-  const raw = payload.role ?? payload.roles ?? payload.authorities ?? [];
-  const list = Array.isArray(raw) ? raw : [raw];
-  return list
-    .map((r) => (typeof r === 'string' ? r : (r?.authority ?? r?.name ?? '')))
-    .map((r) => r.replace(/^ROLE_/i, '').toUpperCase())
-    .filter(Boolean);
+  return ['USER', 'SUPERADMIN'].includes(payload.role) ? [payload.role] : [];
 }
 
 export function createJwtValidator({ jwt: jwtConfig }) {
   return (req, res, next) => {
-    if (req.method === 'OPTIONS') return next();
-
-    const path = req.path;
-    if (isPublic(req.method, path)) return next();
-
-    const header = req.headers.authorization ?? '';
-    const [scheme, token] = header.split(' ');
-    if (scheme?.toLowerCase() !== 'bearer' || !token) {
-      return sendError(req, res, 401, 'Missing or malformed Authorization header');
-    }
-
+    if (isPublic(req.method, req.path)) return next();
+    const match = /^Bearer ([^\s]+)$/i.exec(req.headers.authorization ?? '');
+    if (!match) return sendError(req, res, 401, 'Missing or malformed Authorization header');
     let payload;
     try {
-      payload = jwt.verify(token, jwtConfig.secret, {
+      payload = jwt.verify(match[1], jwtConfig.secret, {
         algorithms: ['HS256', 'HS384', 'HS512'],
-        issuer: jwtConfig.issuer,
-        audience: jwtConfig.audience,
+        issuer: jwtConfig.issuer, audience: jwtConfig.audience,
       });
+      if (typeof payload !== 'object' || !Number.isFinite(payload.exp) ||
+          !Number.isFinite(payload.iat) || payload.iat > Date.now() / 1000 + 60 ||
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(payload.sub ?? '') ||
+          payload.accountId !== payload.sub || !Number.isInteger(payload.sessionVersion) ||
+          payload.sessionVersion < 0 || !extractRoles(payload).length) {
+        return sendError(req, res, 401, 'Invalid IAM identity claims');
+      }
     } catch {
       return sendError(req, res, 401, 'Invalid or expired token');
     }
-
-    const rule = ROLE_RULES.find((r) => hasPrefix(stripTrailingSlash(path), r.prefix));
-    if (rule) {
-      const roles = extractRoles(payload);
-      if (!rule.roles.some((role) => roles.includes(role))) {
-        return sendError(req, res, 403, 'Insufficient permissions');
-      }
-    }
-
+    if ((req.path === '/api/v1/installers' || req.path.startsWith('/api/v1/installers/')) &&
+        payload.role !== 'SUPERADMIN') return sendError(req, res, 403, 'Insufficient permissions');
     req.auth = { sub: payload.sub, roles: extractRoles(payload) };
     next();
   };

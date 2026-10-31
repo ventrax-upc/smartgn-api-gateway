@@ -1,0 +1,542 @@
+[
+  {
+    "method": "PUT",
+    "path": "/api/v1/subusers/{subuserId}/grants",
+    "service": "iam",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/profiles/{profileId}",
+    "service": "iam",
+    "public": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/profiles/{profileId}",
+    "service": "iam",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/profiles/me",
+    "service": "iam",
+    "public": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/profiles/me",
+    "service": "iam",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/subusers",
+    "service": "iam",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/subusers",
+    "service": "iam",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/profiles",
+    "service": "iam",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/sign-in",
+    "service": "iam",
+    "public": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/reset-password",
+    "service": "iam",
+    "public": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/forgot-password",
+    "service": "iam",
+    "public": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/change-password",
+    "service": "iam",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/activate-password",
+    "service": "iam",
+    "public": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/subusers/{subuserId}/grants/{meterId}",
+    "service": "iam",
+    "public": false
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/subusers/{subuserId}/grants/{meterId}",
+    "service": "iam",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/supply-points/{id}",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/supply-points/{id}",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/properties/{id}",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/properties/{id}",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/properties/{id}",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/installers/{id}",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/installers/{id}",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/installations/{id}/target",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/installations/{id}/appointment",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/properties",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/properties",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/properties/{propertyId}/supply-points",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/properties/{propertyId}/supply-points",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/operations/outbox/{id}/retry",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/installers",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/installers",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/installations",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/installations",
+    "service": "installation",
+    "public": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/installations/{id}/complete",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/installations/{id}/cancel",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/installations/{id}/assign",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/devices",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/devices",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/devices/{id}/credentials/rotate",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/devices/{id}/credentials/revoke",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/devices/{id}/associations",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/devices/{id}/associations",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/installers/{id}/status",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/installations/{id}/status",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/installations/{id}/reassign",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/operations/outbox",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/operations/outbox/{id}",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/meters",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/installations/{id}",
+    "service": "installation",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/support/technicians/{technicianId}",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/support/technicians/{technicianId}",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/support/visits/{visitId}/start",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/support/visits/{visitId}/schedule",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/support/visits/{visitId}/complete",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/support/visits/{visitId}/assign",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/support/tickets",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/support/tickets",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/support/tickets/{ticketId}/visits",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/support/tickets/{ticketId}/visits",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/support/tickets/{ticketId}/replies",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/support/tickets/{ticketId}/replies",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/support/tickets/{ticketId}/rating",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/support/tickets/{ticketId}/rating",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/support/tickets/{ticketId}/photos",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/support/tickets/{ticketId}/photos",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/support/tickets/{ticketId}/close",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/support/technicians",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/support/technicians",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/support/knowledge-articles",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/support/knowledge-articles",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/support/visits/{visitId}/diagnosis",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/support/tickets/{ticketId}",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/support/tickets/{ticketId}/photos/{photoId}/download",
+    "service": "support",
+    "public": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/payment-methods/{id}/default",
+    "service": "billing",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/subscriptions/pro",
+    "service": "billing",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payments/orders/{id}/retry",
+    "service": "billing",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payments/orders/{id}/pay",
+    "service": "billing",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payment-methods",
+    "service": "billing",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payment-methods",
+    "service": "billing",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/checkout/orders",
+    "service": "billing",
+    "public": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/checkout/orders/{id}/sessions",
+    "service": "billing",
+    "public": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/subscriptions/me/renewal",
+    "service": "billing",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/technical-statements/{id}",
+    "service": "billing",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/subscriptions/me",
+    "service": "billing",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payments/orders/{id}",
+    "service": "billing",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payments/history",
+    "service": "billing",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/checkout/orders/{id}",
+    "service": "billing",
+    "public": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/billing-documents/{id}",
+    "service": "billing",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/billing-documents/{id}/download",
+    "service": "billing",
+    "public": false
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/payment-methods/{id}",
+    "service": "billing",
+    "public": false
+  }
+]

@@ -13,10 +13,11 @@ function buildProxy(name, target, prefixes, timeoutMs) {
       proxyReq: (proxyReq, req) => {
         req._proxyStartedAt = Date.now();
         if (req.id) proxyReq.setHeader('x-correlation-id', req.id);
+        for (const header of ['origin', 'x-user-id', 'x-account-id', 'x-role', 'x-roles', 'x-auth-user']) proxyReq.removeHeader(header);
       },
       error: (err, req, res) => {
         // Log without secrets; the client gets a generic controlled error.
-        console.error(`[${req.id}] upstream "${name}" error: ${err.code ?? err.message}`);
+        console.error(`[${req.id}] upstream "${name}" error: ${err.code ?? 'UNKNOWN'}`);
         if (typeof res.status !== 'function') {
           res.destroy?.();
           return;
