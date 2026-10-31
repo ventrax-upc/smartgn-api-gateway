@@ -52,7 +52,7 @@ export function createJwtValidator({ jwt: jwtConfig }) {
     let payload;
     try {
       payload = jwt.verify(token, jwtConfig.secret, {
-        algorithms: ['HS256'],
+        algorithms: ['HS256', 'HS384', 'HS512'],
         issuer: jwtConfig.issuer,
         audience: jwtConfig.audience,
       });
