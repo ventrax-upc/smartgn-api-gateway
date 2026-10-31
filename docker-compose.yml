@@ -1,0 +1,16 @@
+# Runs the Gateway in Docker against services running on the host
+# (IAM 18080, Installation 18081, Support 8082, Billing 28083).
+services:
+  api-gateway:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      IAM_URL: http://host.docker.internal:18080
+      INSTALLATION_URL: http://host.docker.internal:18081
+      SUPPORT_URL: http://host.docker.internal:8082
+      BILLING_URL: http://host.docker.internal:28083
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
