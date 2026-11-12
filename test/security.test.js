@@ -6,6 +6,7 @@ import { createApp } from '../src/app.js';
 import { loadConfig } from '../src/config/env.js';
 import { CONTRACTS } from '../src/routes/contracts.js';
 import { ROUTE_TABLE, matchesPrefix } from '../src/routes/route-table.js';
+import { registerWithAdmin } from '../src/config/admin-registration.js';
 
 const secret = 'gateway-test-only-0123456789-0123456789-0123456789';
 const account = '11111111-1111-4111-8111-111111111111';
@@ -20,9 +21,15 @@ async function setup(t, environment = {}) {
     req.on('data', (chunk) => chunks.push(chunk));
     req.on('end', () => {
       seen.push({ url: req.url, method: req.method, body: Buffer.concat(chunks), headers: req.headers });
-      if (req.url === '/actuator/health') {
+      if (req.url === '/actuator/health' || req.url === '/ready') {
         res.writeHead(200, { 'content-type': 'application/json' });
         return res.end('{"status":"UP"}');
+      }
+      if (req.url === '/internal/v1/sessions/introspect') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        return res.end(JSON.stringify({
+          status: environment.IAM_SESSION_STATUS || 'ACTIVE', accountId: account, role: 'SUPERADMIN',
+        }));
       }
       res.writeHead(201, { 'content-type': 'application/octet-stream', 'x-total-count': '7', 'content-disposition': 'attachment; filename="test.bin"' });
       res.end(Buffer.concat(chunks));
@@ -32,6 +39,7 @@ async function setup(t, environment = {}) {
   const url = `http://127.0.0.1:${backend.address().port}`;
   const config = loadConfig({ JWT_SECRET: secret, RATE_LIMIT_MAX: '1000',
     IAM_URL: url, INSTALLATION_URL: url, SUPPORT_URL: url, BILLING_URL: url,
+    ALERTING_URL: url, MONITORING_URL: url, INTERNAL_SERVICE_TOKEN: 'test-internal-token',
     CORS_ORIGINS: 'http://localhost:4200', ...environment });
   const gateway = http.createServer(createApp(config));
   await new Promise((resolve) => gateway.listen(0, '127.0.0.1', resolve));
@@ -41,7 +49,9 @@ async function setup(t, environment = {}) {
 
 test('every public service operation has an exact route and reaches the owning proxy', async (t) => {
   const { url, seen } = await setup(t);
-  assert.equal(CONTRACTS.length, 90);
+  assert.equal(CONTRACTS.length, 108);
+  assert.ok(CONTRACTS.filter((contract) => ['alerting', 'monitoring'].includes(contract.service))
+    .every((contract) => !contract.public));
   for (const contract of CONTRACTS) {
     assert.ok(matchesPrefix(contract.path, ROUTE_TABLE[contract.service]), contract.path);
     const path = contract.path.replace(/\{[^}]+\}/g, account);
@@ -52,6 +62,43 @@ test('every public service operation has an exact route and reaches the owning p
     assert.equal(seen.at(-1).url, path);
     assert.equal(seen.at(-1).method, contract.method);
   }
+});
+
+test('Gateway Admin registration uses Docker service DNS and Basic authentication', async () => {
+  let registration;
+  const registered = await registerWithAdmin({ port: 8000 }, {
+    SMARTGN_ADMIN_URL: 'http://admin:8089',
+    SMARTGN_ADMIN_USERNAME: 'smartgn-local',
+    SMARTGN_ADMIN_PASSWORD: 'admin-test-password',
+    ADMIN_SERVICE_URL: 'http://api-gateway:8000',
+  }, async (url, options) => {
+    registration = { url, options };
+    return { ok: true, status: 201 };
+  });
+  assert.equal(registered, true);
+  assert.equal(registration.url, 'http://admin:8089/instances');
+  assert.equal(registration.options.headers.authorization,
+    `Basic ${Buffer.from('smartgn-local:admin-test-password').toString('base64')}`);
+  assert.deepEqual(JSON.parse(registration.options.body), {
+    name: 'smartgn-api-gateway',
+    serviceUrl: 'http://api-gateway:8000',
+    managementUrl: 'http://api-gateway:8000',
+    healthUrl: 'http://api-gateway:8000/health',
+  });
+});
+
+test('Alerting forwards only an active IAM identity and rejects revoked sessions', async (t) => {
+  const { url, seen } = await setup(t, { IAM_SESSION_STATUS: 'REVOKED' });
+  const response = await fetch(url + '/api/v1/alerts', {
+    headers: {
+      authorization: `Bearer ${token()}`,
+      'x-account-id': '99999999-9999-4999-8999-999999999999',
+      'x-role': 'SUPERADMIN',
+    },
+  });
+  assert.equal(response.status, 401);
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0].url, '/internal/v1/sessions/introspect');
 });
 
 test('rejects missing IAM identity, expiry, issued-at, future issued-at and unsupported roles', async (t) => {
@@ -130,7 +177,7 @@ test('OpenAPI exposes only public contracts and reports readiness separately fro
   assert.equal(api.info.title, 'SmartGN - API Gateway');
   assert.equal(api.info.version, 'v1');
   assert.ok(!Object.keys(api.paths).some((path) => path.startsWith('/internal')));
-  assert.equal(Object.values(api.paths).reduce((n, item) => n + Object.keys(item).length, 0), 92);
+  assert.equal(Object.values(api.paths).reduce((n, item) => n + Object.keys(item).length, 0), 110);
   assert.equal((await fetch(url + '/ready')).status, 200);
   assert.equal((await fetch(url + '/swagger-ui/index.html')).status, 200);
   assert.match(await (await fetch(url + '/swagger-ui/swagger-initializer.js')).text(), /persistAuthorization:false/);

@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import swaggerUi from 'swagger-ui-dist';
 import { correlationId } from './middlewares/correlation-id.js';
 import { createRateLimiters } from './middlewares/rate-limiter.js';
@@ -44,11 +45,7 @@ export function createApp(config) {
   const api = JSON.parse(readFileSync(new URL('../docs/openapi.json', import.meta.url)));
   app.get('/v3/api-docs', (_req, res) => res.json(api));
   app.get('/swagger-ui.html', (_req, res) => res.redirect('/swagger-ui/index.html'));
-  app.get('/swagger-ui/swagger-initializer.js', (_req, res) => {
-    res.type('application/javascript').send(
-      `window.onload=()=>{window.ui=SwaggerUIBundle({url:'/v3/api-docs',dom_id:'#swagger-ui',deepLinking:true,persistAuthorization:false});};`,
-    );
-  });
+  app.use('/swagger-ui', express.static(fileURLToPath(new URL('./swagger/', import.meta.url))));
   app.use('/swagger-ui', express.static(swaggerUi.getAbsoluteFSPath()));
   app.use((req, res, next) => {
     if (!findContract(req.method, req.path)) return notFoundHandler(req, res);
@@ -57,6 +54,31 @@ export function createApp(config) {
   // Resource ownership and current session/grant checks remain in the owning service.
   app.post('/api/v1/auth/sign-in', signIn);
   app.use(createJwtValidator(config));
+  app.use(async (req, res, next) => {
+    if (!findContract(req.method, req.path) || findContract(req.method, req.path).service !== 'alerting') return next();
+    if (!config.jwt.internalServiceToken) return sendError(req, res, 503, 'Session verification unavailable');
+    try {
+      const response = await fetch(`${config.services.iam}/internal/v1/sessions/introspect`, {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${config.jwt.internalServiceToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ token: req.headers.authorization.slice(7) }),
+        signal: AbortSignal.timeout(Math.min(config.proxyTimeoutMs, 2000)),
+      });
+      if (response.status === 401 || response.status === 403) return sendError(req, res, 401, 'Invalid or revoked session');
+      if (!response.ok) return sendError(req, res, 503, 'Session verification unavailable');
+      const actor = await response.json();
+      if (actor.status !== 'ACTIVE' || actor.accountId !== req.auth.sub || !['USER', 'SUPERADMIN'].includes(actor.role)) {
+        return sendError(req, res, 401, 'Invalid or revoked session');
+      }
+      req.auth.roles = [actor.role];
+      next();
+    } catch {
+      return sendError(req, res, 503, 'Session verification unavailable');
+    }
+  });
   // No body parser: JSON, multipart and binary payloads stream unchanged.
   for (const proxy of createProxies(config)) app.use(proxy);
   app.use(notFoundHandler);
