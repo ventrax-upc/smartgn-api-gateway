@@ -11,6 +11,11 @@ export const ROUTE_TABLE = {
     `${API}/checkout`, `${API}/payment-methods`, `${API}/subscriptions`,
     `${API}/billing-documents`, `${API}/payments`, `${API}/technical-statements`,
   ],
+  alerting: [
+    `${API}/alerts`, `${API}/alert-rules`, `${API}/notifications`,
+    `${API}/notification-preferences`,
+  ],
+  monitoring: [`${API}/analytics`],
 };
 
 export const matchesPrefix = (path, prefixes) =>

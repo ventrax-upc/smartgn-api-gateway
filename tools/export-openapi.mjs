@@ -8,12 +8,14 @@ const owners = {
   installation: ['smartgn-installation-device-management', 'Installation & Device Management'],
   support: ['smartgn-support-maintenance', 'Support & Maintenance'],
   billing: ['smartgn-payments-billing', 'Payments & Billing'],
+  alerting: ['smartgn-alerting-notifications', 'Alerting & Notifications'],
+  monitoring: ['smartgn-monitoring-analytics', 'Monitoring & Analytics'],
 };
 const api = {
   openapi: '3.1.0',
   info: {
     title: 'SmartGN - API Gateway', version: 'v1', license: { name: 'MIT' },
-    description: 'Public HTTP entry point for IAM, Installation & Device Management, Support & Maintenance and Payments & Billing. Validates IAM JWTs, applies CORS and request limits, and forwards service contracts without changing their paths. Each owning service verifies current sessions, ownership and delegated functions. Internal routes are excluded. Local HTTP execution does not establish a production TLS or AWS deployment.',
+    description: 'Public HTTP entry point for IAM, Installation & Device Management, Support & Maintenance, Payments & Billing, Alerting & Notifications, and Monitoring & Analytics. Validates IAM JWTs, checks current sessions for Alerting, applies CORS and request limits, and forwards service contracts without changing their paths. Each owning service verifies resource ownership and delegated functions. Internal routes are excluded. Local HTTP execution does not establish a production TLS or AWS deployment.',
   },
   servers: [{ url: '/', description: 'Current Gateway origin' }],
   tags: [{ name: 'Gateway health', description: 'Process liveness and dependency readiness.' }],
@@ -45,7 +47,8 @@ for (const [owner, [repo, name]] of Object.entries(owners)) {
       if (!['get', 'post', 'put', 'patch', 'delete', 'head'].includes(method)) continue;
       if (api.paths[route][method]) throw new Error(`Duplicate route ${method} ${route}`);
       const operation = refs(original, owner);
-      const publicRoute = (original.security ?? source.security ?? []).length === 0;
+      const publicRoute = !['alerting', 'monitoring'].includes(owner) &&
+        (original.security ?? source.security ?? []).length === 0;
       contracts.push({ method: method.toUpperCase(), path: route, service: owner, public: publicRoute });
       operation.operationId = `${owner}_${original.operationId}`;
       operation.tags = (original.tags ?? []).map((tag) => `${name} / ${tag}`);
@@ -63,7 +66,7 @@ for (const [owner, [repo, name]] of Object.entries(owners)) {
 }
 for (const [route, summary, description, responses] of [
   ['/health', 'Get Gateway liveness', 'Returns UP while the Gateway process is responding. Does not imply that dependencies are ready.', { 200: { description: 'Gateway process is up.' } }],
-  ['/ready', 'Get Gateway dependency readiness', 'Checks the four owning services with bounded health requests. Returns 503 if a dependency is unavailable.', { 200: { description: 'All dependencies are healthy.' }, 503: { description: 'A dependency is unavailable.' } }],
+  ['/ready', 'Get Gateway dependency readiness', 'Checks the six routed services with bounded health requests. Returns 503 if a dependency is unavailable.', { 200: { description: 'All dependencies are healthy.' }, 503: { description: 'A dependency is unavailable.' } }],
 ]) api.paths[route] = { get: { operationId: route.slice(1), tags: ['Gateway health'], summary, description, security: [], responses } };
 // Keep only component definitions reachable from public operations.
 const used = new Set();

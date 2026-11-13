@@ -15,8 +15,9 @@ export function loadConfig(env = process.env) {
   }
   const services = {};
   for (const [name, key, port] of [
-    ['iam', 'IAM_URL', 18080], ['installation', 'INSTALLATION_URL', 18081],
-    ['support', 'SUPPORT_URL', 8082], ['billing', 'BILLING_URL', 28083],
+    ['iam', 'IAM_URL', 8080], ['installation', 'INSTALLATION_URL', 8081],
+    ['support', 'SUPPORT_URL', 8082], ['billing', 'BILLING_URL', 8083],
+    ['alerting', 'ALERTING_URL', 8086], ['monitoring', 'MONITORING_URL', 8084],
   ]) {
     const url = new URL(env[key] || `http://localhost:${port}`);
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password ||
@@ -38,6 +39,7 @@ export function loadConfig(env = process.env) {
       secret: env.JWT_SECRET,
       issuer: env.JWT_ISSUER || 'smartgn-iam-service',
       audience: env.JWT_AUDIENCE || 'smartgn-api',
+      internalServiceToken: env.INTERNAL_SERVICE_TOKEN || '',
     },
     services,
   };

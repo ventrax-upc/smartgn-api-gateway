@@ -36,6 +36,14 @@ before(async () => {
         res.writeHead(403, { 'content-type': 'application/json' });
         return res.end('{"detail":"not your property"}');
       }
+      if (req.url === '/actuator/health' || req.url === '/ready') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        return res.end('{"status":"UP"}');
+      }
+      if (req.url === '/internal/v1/sessions/introspect') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        return res.end(JSON.stringify({ status: 'ACTIVE', accountId: ACCOUNT, role: 'USER' }));
+      }
       res.writeHead(201, { 'content-type': 'application/json' });
       res.end(JSON.stringify({ echo: body, url: req.url }));
     });
@@ -53,6 +61,8 @@ before(async () => {
     INSTALLATION_URL: `http://127.0.0.1:${backendPort}`,
     SUPPORT_URL: `http://127.0.0.1:${slowPort}`,
     BILLING_URL: 'http://127.0.0.1:1', // nothing listening
+    ALERTING_URL: `http://127.0.0.1:${backendPort}`,
+    MONITORING_URL: `http://127.0.0.1:${backendPort}`,
     PROXY_TIMEOUT_MS: '400',
     RATE_LIMIT_MAX: '1000',
   });

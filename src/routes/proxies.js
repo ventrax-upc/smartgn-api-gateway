@@ -14,6 +14,10 @@ function buildProxy(name, target, prefixes, timeoutMs) {
         req._proxyStartedAt = Date.now();
         if (req.id) proxyReq.setHeader('x-correlation-id', req.id);
         for (const header of ['origin', 'x-user-id', 'x-account-id', 'x-role', 'x-roles', 'x-auth-user']) proxyReq.removeHeader(header);
+        if (name === 'alerting' && req.auth) {
+          proxyReq.setHeader('x-account-id', req.auth.sub);
+          proxyReq.setHeader('x-role', req.auth.roles[0]);
+        }
       },
       error: (err, req, res) => {
         // Log without secrets; the client gets a generic controlled error.

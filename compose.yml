@@ -6,9 +6,20 @@ services:
     env_file: .env
     environment:
       API_PORT: 8000
-      IAM_URL: http://host.docker.internal:18080
-      INSTALLATION_URL: http://host.docker.internal:18081
+      IAM_URL: http://host.docker.internal:8080
+      INSTALLATION_URL: http://host.docker.internal:8081
       SUPPORT_URL: http://host.docker.internal:8082
-      BILLING_URL: http://host.docker.internal:28083
+      BILLING_URL: http://host.docker.internal:8083
+      ALERTING_URL: http://host.docker.internal:8086
+      MONITORING_URL: http://host.docker.internal:8084
+      SMARTGN_CONFIG_URL: http://host.docker.internal:8088
+      SMARTGN_CONFIG_PROFILE: local
+      SMARTGN_ADMIN_URL: ${SMARTGN_ADMIN_URL:-http://host.docker.internal:8089}
+      SMARTGN_ADMIN_USERNAME: ${SMARTGN_ADMIN_USERNAME:-admin}
+      SMARTGN_ADMIN_PASSWORD: ${SMARTGN_ADMIN_PASSWORD:-local-admin-password}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-}
+      ADMIN_SERVICE_URL: http://host.docker.internal:8000
+      ADMIN_MANAGEMENT_URL: http://host.docker.internal:8000
+      ADMIN_HEALTH_URL: http://host.docker.internal:8000/health
     extra_hosts: ["host.docker.internal:host-gateway"]
     init: true

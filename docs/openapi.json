@@ -6,7 +6,7 @@
     "license": {
       "name": "MIT"
     },
-    "description": "Public HTTP entry point for IAM, Installation & Device Management, Support & Maintenance and Payments & Billing. Validates IAM JWTs, applies CORS and request limits, and forwards service contracts without changing their paths. Each owning service verifies current sessions, ownership and delegated functions. Internal routes are excluded. Local HTTP execution does not establish a production TLS or AWS deployment."
+    "description": "Public HTTP entry point for IAM, Installation & Device Management, Support & Maintenance, Payments & Billing, Alerting & Notifications, and Monitoring & Analytics. Validates IAM JWTs, checks current sessions for Alerting, applies CORS and request limits, and forwards service contracts without changing their paths. Each owning service verifies resource ownership and delegated functions. Internal routes are excluded. Local HTTP execution does not establish a production TLS or AWS deployment."
   },
   "servers": [
     {
@@ -106,6 +106,26 @@
     {
       "name": "Payments & Billing / Billing documents",
       "description": "Owned fiscal metadata and downloadable test or provider artifacts."
+    },
+    {
+      "name": "Alerting & Notifications / Alert rules",
+      "description": "Administration of the rule engine"
+    },
+    {
+      "name": "Alerting & Notifications / Notification preferences",
+      "description": "Channel and recipient per notification type"
+    },
+    {
+      "name": "Alerting & Notifications / Notifications",
+      "description": "Outbox and delivery history"
+    },
+    {
+      "name": "Alerting & Notifications / Alerts",
+      "description": "Critical alert consultation and lifecycle"
+    },
+    {
+      "name": "Monitoring & Analytics / Analytics",
+      "description": "Authorized live readings, consumption history and Pro reports."
     }
   ],
   "paths": {
@@ -1225,6 +1245,9 @@
         "responses": {
           "204": {
             "description": "Operation completed without a response body."
+          },
+          "400": {
+            "description": "Activation token or password is missing or invalid."
           },
           "429": {
             "description": "Gateway request limit exceeded.",
@@ -3108,6 +3131,9 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Required installation contact or address is missing or invalid."
           },
           "429": {
             "description": "Gateway request limit exceeded.",
@@ -7961,6 +7987,9 @@
               }
             }
           },
+          "400": {
+            "description": "Checkout inputs or required headers are missing or invalid."
+          },
           "429": {
             "description": "Gateway request limit exceeded.",
             "content": {
@@ -8045,6 +8074,9 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Checkout inputs or required headers are missing or invalid."
           },
           "429": {
             "description": "Gateway request limit exceeded.",
@@ -8573,6 +8605,9 @@
               }
             }
           },
+          "400": {
+            "description": "Checkout inputs or required headers are missing or invalid."
+          },
           "429": {
             "description": "Gateway request limit exceeded.",
             "content": {
@@ -8897,6 +8932,1962 @@
         "x-upstream-service": "billing"
       }
     },
+    "/api/v1/alert-rules/{ruleId}": {
+      "get": {
+        "tags": [
+          "Alerting & Notifications / Alert rules"
+        ],
+        "summary": "Get an alert rule by id",
+        "description": "Returns the metric, threshold and severity configured for the requested rule.",
+        "operationId": "alerting_getById",
+        "parameters": [
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rule found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_AlertRuleResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service authentication or trusted Gateway identity is missing or invalid."
+          },
+          "404": {
+            "description": "Rule not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "alerting"
+      },
+      "put": {
+        "tags": [
+          "Alerting & Notifications / Alert rules"
+        ],
+        "summary": "Update an alert rule",
+        "description": "Requires SUPERADMIN role. Accepts PUT or PATCH with the full rule payload.",
+        "operationId": "alerting_update",
+        "parameters": [
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/alerting_UpdateAlertRuleResource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Rule updated",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_AlertRuleResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid rule definition",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service authentication or trusted Gateway identity is missing or invalid."
+          },
+          "403": {
+            "description": "Administrator role required",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rule not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Rule name already exists",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "alerting"
+      },
+      "patch": {
+        "tags": [
+          "Alerting & Notifications / Alert rules"
+        ],
+        "summary": "Update an alert rule",
+        "description": "Requires SUPERADMIN role. Accepts PUT or PATCH with the full rule payload.",
+        "operationId": "alerting_update_1",
+        "parameters": [
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/alerting_UpdateAlertRuleResource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Rule updated",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_AlertRuleResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid rule definition",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service authentication or trusted Gateway identity is missing or invalid."
+          },
+          "403": {
+            "description": "Administrator role required",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rule not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Rule name already exists",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "alerting"
+      }
+    },
+    "/api/v1/notification-preferences": {
+      "get": {
+        "tags": [
+          "Alerting & Notifications / Notification preferences"
+        ],
+        "summary": "List notification preferences for an account",
+        "description": "When accountId is omitted, the authenticated account is used.",
+        "operationId": "alerting_getByAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Preferences found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/alerting_NotificationPreferenceResource"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service authentication or trusted Gateway identity is missing or invalid."
+          },
+          "403": {
+            "description": "Account scope required",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "alerting"
+      },
+      "put": {
+        "tags": [
+          "Alerting & Notifications / Notification preferences"
+        ],
+        "summary": "Upsert a notification preference",
+        "description": "Creates or updates the channel and recipient for an account and notification type.",
+        "operationId": "alerting_upsert",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/alerting_UpdateNotificationPreferenceResource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Preference saved",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_NotificationPreferenceResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid channel or recipient",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service authentication or trusted Gateway identity is missing or invalid."
+          },
+          "403": {
+            "description": "Account scope required",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "alerting"
+      }
+    },
+    "/api/v1/alerts/{alertId}/resolve": {
+      "post": {
+        "tags": [
+          "Alerting & Notifications / Alerts"
+        ],
+        "summary": "Resolve an alert",
+        "description": "Closes an alert after the underlying condition has been addressed.",
+        "operationId": "alerting_resolve",
+        "parameters": [
+          {
+            "name": "alertId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alert resolved",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_AlertResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service authentication or trusted Gateway identity is missing or invalid."
+          },
+          "403": {
+            "description": "Alert belongs to another account",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alert not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Invalid alert state",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "alerting"
+      }
+    },
+    "/api/v1/alerts/{alertId}/acknowledge": {
+      "post": {
+        "tags": [
+          "Alerting & Notifications / Alerts"
+        ],
+        "summary": "Acknowledge an alert",
+        "description": "Records that the alert was reviewed and leaves it open for resolution.",
+        "operationId": "alerting_acknowledge",
+        "parameters": [
+          {
+            "name": "alertId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alert acknowledged",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_AlertResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service authentication or trusted Gateway identity is missing or invalid."
+          },
+          "403": {
+            "description": "Alert belongs to another account",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alert not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Invalid alert state",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "alerting"
+      }
+    },
+    "/api/v1/alert-rules": {
+      "get": {
+        "tags": [
+          "Alerting & Notifications / Alert rules"
+        ],
+        "summary": "List alert rules",
+        "description": "Lists rules used to evaluate telemetry, with an optional active-state filter.",
+        "operationId": "alerting_getAll",
+        "parameters": [
+          {
+            "name": "active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rules found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/alerting_AlertRuleResource"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service authentication or trusted Gateway identity is missing or invalid."
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "alerting"
+      },
+      "post": {
+        "tags": [
+          "Alerting & Notifications / Alert rules"
+        ],
+        "summary": "Create an alert rule",
+        "description": "Requires SUPERADMIN role.",
+        "operationId": "alerting_create_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/alerting_CreateAlertRuleResource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Rule created",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_AlertRuleResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid rule definition",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service authentication or trusted Gateway identity is missing or invalid."
+          },
+          "403": {
+            "description": "Administrator role required",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Rule name already exists",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "alerting"
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "tags": [
+          "Alerting & Notifications / Notifications"
+        ],
+        "summary": "List notifications",
+        "description": "Returns a paginated list of notifications visible to the caller.",
+        "operationId": "alerting_getAll_1",
+        "parameters": [
+          {
+            "name": "alertId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "ACCEPTED",
+                "DELIVERED",
+                "FAILED",
+                "INDETERMINATE"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notifications found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/alerting_NotificationResource"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid filter or pagination",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service authentication or trusted Gateway identity is missing or invalid."
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "alerting"
+      }
+    },
+    "/api/v1/notifications/{notificationId}": {
+      "get": {
+        "tags": [
+          "Alerting & Notifications / Notifications"
+        ],
+        "summary": "Get a notification by id",
+        "description": "Returns the status and recipient of a notification visible to the caller.",
+        "operationId": "alerting_getById_1",
+        "parameters": [
+          {
+            "name": "notificationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_NotificationResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service authentication or trusted Gateway identity is missing or invalid."
+          },
+          "403": {
+            "description": "Notification belongs to another account",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Notification not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "alerting"
+      }
+    },
+    "/api/v1/notifications/{notificationId}/attempts": {
+      "get": {
+        "tags": [
+          "Alerting & Notifications / Notifications"
+        ],
+        "summary": "List delivery attempts for a notification",
+        "description": "Returns recorded attempts and provider outcomes for a notification visible to the caller.",
+        "operationId": "alerting_getAttempts",
+        "parameters": [
+          {
+            "name": "notificationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attempts found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/alerting_NotificationAttemptResource"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service authentication or trusted Gateway identity is missing or invalid."
+          },
+          "403": {
+            "description": "Notification belongs to another account",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Notification not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "alerting"
+      }
+    },
+    "/api/v1/alerts": {
+      "get": {
+        "tags": [
+          "Alerting & Notifications / Alerts"
+        ],
+        "summary": "List alerts",
+        "description": "Returns a paginated list of alerts visible to the caller.",
+        "operationId": "alerting_getAll_2",
+        "parameters": [
+          {
+            "name": "supplyPointId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "OPEN",
+                "ACKNOWLEDGED",
+                "RESOLVED"
+              ]
+            }
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INFO",
+                "WARNING",
+                "CRITICAL"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alerts found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/alerting_AlertResource"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid filter or pagination",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service authentication or trusted Gateway identity is missing or invalid."
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "alerting"
+      }
+    },
+    "/api/v1/alerts/{alertId}": {
+      "get": {
+        "tags": [
+          "Alerting & Notifications / Alerts"
+        ],
+        "summary": "Get an alert by id",
+        "description": "Returns the alert details when the caller can access its account.",
+        "operationId": "alerting_getById_2",
+        "parameters": [
+          {
+            "name": "alertId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alert found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_AlertResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service authentication or trusted Gateway identity is missing or invalid."
+          },
+          "403": {
+            "description": "Alert belongs to another account",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alert not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "alerting"
+      }
+    },
+    "/api/v1/alerts/{alertId}/notifications": {
+      "get": {
+        "tags": [
+          "Alerting & Notifications / Alerts"
+        ],
+        "summary": "List notifications for an alert",
+        "description": "Returns the delivery records linked to an alert the caller can access.",
+        "operationId": "alerting_getNotifications",
+        "parameters": [
+          {
+            "name": "alertId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notifications found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/alerting_NotificationResource"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service authentication or trusted Gateway identity is missing or invalid."
+          },
+          "403": {
+            "description": "Alert belongs to another account",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alert not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/alerting_ProblemDetail"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "alerting"
+      }
+    },
+    "/api/v1/analytics/live": {
+      "get": {
+        "tags": [
+          "Monitoring & Analytics / Analytics"
+        ],
+        "summary": "Latest reading of an authorized meter",
+        "description": "Returns the most recent reading (volume, pressure, gas presence, valve state) and its freshness. Requires VIEW_CONSUMPTION on the meter. Not cached.",
+        "parameters": [
+          {
+            "name": "meterId",
+            "in": "query",
+            "description": "Meter identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latest reading",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/monitoring_LiveReadingDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid meterId"
+          },
+          "401": {
+            "description": "Missing or invalid IAM token"
+          },
+          "403": {
+            "description": "No current grant on the meter"
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "IAM or Telemetry temporarily unavailable"
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "operationId": "monitoring_undefined",
+        "x-upstream-service": "monitoring"
+      }
+    },
+    "/api/v1/analytics/consumption": {
+      "get": {
+        "tags": [
+          "Monitoring & Analytics / Analytics"
+        ],
+        "summary": "Consolidated consumption of authorized meters",
+        "description": "Consumption (difference of cumulative readings), estimated cost and simple monthly estimate per meter. Defaults to the current month. Cache-Aside with Redis (header X-Cache: HIT or MISS).",
+        "parameters": [
+          {
+            "name": "meterIds",
+            "in": "query",
+            "description": "Meter identifiers (max 100)",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Period start (ISO 8601). Default: first day of the current month",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Period end (ISO 8601). Default: now",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consumption per meter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/monitoring_ConsumptionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid meters or period"
+          },
+          "401": {
+            "description": "Missing or invalid IAM token"
+          },
+          "403": {
+            "description": "No current grant on one of the meters"
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "IAM or Telemetry temporarily unavailable"
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "operationId": "monitoring_undefined",
+        "x-upstream-service": "monitoring"
+      }
+    },
+    "/api/v1/analytics/reports": {
+      "get": {
+        "tags": [
+          "Monitoring & Analytics / Analytics"
+        ],
+        "summary": "Generate consolidated consumption report (Pro)",
+        "description": "Requires USE_REPORTS on every meter and an active Pro subscription confirmed by Billing over gRPC. The report is stored in PostgreSQL and cached in Redis (header X-Cache).",
+        "parameters": [
+          {
+            "name": "meterIds",
+            "in": "query",
+            "description": "Meter identifiers (max 100)",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Period start (ISO 8601)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Period end (ISO 8601)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/monitoring_ConsumptionReportDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid meters or period"
+          },
+          "401": {
+            "description": "Missing or invalid IAM token"
+          },
+          "403": {
+            "description": "No grant on a meter or Pro subscription required"
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "IAM, Billing or Telemetry temporarily unavailable"
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "operationId": "monitoring_undefined",
+        "x-upstream-service": "monitoring"
+      }
+    },
     "/health": {
       "get": {
         "operationId": "health",
@@ -8920,7 +10911,7 @@
           "Gateway health"
         ],
         "summary": "Get Gateway dependency readiness",
-        "description": "Checks the four owning services with bounded health requests. Returns 503 if a dependency is unavailable.",
+        "description": "Checks the six routed services with bounded health requests. Returns 503 if a dependency is unavailable.",
         "security": [],
         "responses": {
           "200": {
@@ -10571,6 +12562,695 @@
             "type": "boolean"
           }
         }
+      },
+      "alerting_UpdateAlertRuleResource": {
+        "type": "object",
+        "description": "Request resource used to update an alert rule",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 0
+          },
+          "metric": {
+            "type": "string",
+            "enum": [
+              "CONSUMPTION",
+              "PRESSURE",
+              "GAS_PRESENCE",
+              "VALVE_STATE"
+            ]
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "GREATER_THAN",
+              "GREATER_THAN_OR_EQUAL",
+              "LESS_THAN",
+              "LESS_THAN_OR_EQUAL",
+              "EQUALS",
+              "NOT_EQUALS",
+              "IS_TRUE",
+              "IS_FALSE"
+            ]
+          },
+          "threshold": {
+            "type": "number"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "INFO",
+              "WARNING",
+              "CRITICAL"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "metric",
+          "name",
+          "operator",
+          "severity"
+        ]
+      },
+      "alerting_AlertRuleResource": {
+        "type": "object",
+        "description": "Alert rule representation",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "metric": {
+            "type": "string"
+          },
+          "metricLabel": {
+            "type": "string"
+          },
+          "operator": {
+            "type": "string"
+          },
+          "operatorLabel": {
+            "type": "string"
+          },
+          "threshold": {
+            "type": "number"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "severityLabel": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "alerting_ProblemDetail": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "format": "uri"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        }
+      },
+      "alerting_UpdateNotificationPreferenceResource": {
+        "type": "object",
+        "description": "Request resource used to upsert a notification preference",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "notificationType": {
+            "type": "string",
+            "enum": [
+              "CRITICAL_ALERT",
+              "OPERATIONAL_NOTICE"
+            ]
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "EMAIL",
+              "SMS",
+              "WHATSAPP"
+            ]
+          },
+          "recipient": {
+            "type": "string",
+            "maxLength": 320,
+            "minLength": 0
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "accountId",
+          "channel",
+          "notificationType",
+          "recipient"
+        ]
+      },
+      "alerting_NotificationPreferenceResource": {
+        "type": "object",
+        "description": "Notification preference for an account and notification type",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "notificationType": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string"
+          },
+          "channelLabel": {
+            "type": "string"
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "alerting_NotificationResource": {
+        "type": "object",
+        "description": "Notification outbox and delivery state",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "alertId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sourceEventId": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "notificationType": {
+            "type": "string"
+          },
+          "operationalEventType": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string"
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "statusLabel": {
+            "type": "string"
+          },
+          "attempts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "providerMessageId": {
+            "type": "string"
+          },
+          "lastError": {
+            "type": "string"
+          },
+          "nextAttemptAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "alerting_AlertResource": {
+        "type": "object",
+        "description": "Alert representation",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "deviceId": {
+            "type": "string"
+          },
+          "propertyId": {
+            "type": "string"
+          },
+          "supplyPointId": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "ruleId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "ruleVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ruleName": {
+            "type": "string"
+          },
+          "metric": {
+            "type": "string"
+          },
+          "operator": {
+            "type": "string"
+          },
+          "threshold": {
+            "type": "number"
+          },
+          "measuredValue": {
+            "type": "number"
+          },
+          "condition": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "severityLabel": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "statusLabel": {
+            "type": "string"
+          },
+          "instructions": {
+            "type": "string"
+          },
+          "measuredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "acknowledgedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolvedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "alerting_CreateAlertRuleResource": {
+        "type": "object",
+        "description": "Request resource used to create an alert rule",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Unique rule name",
+            "example": "Critical low pressure",
+            "maxLength": 120,
+            "minLength": 0
+          },
+          "metric": {
+            "type": "string",
+            "description": "Telemetry metric evaluated by the rule",
+            "enum": [
+              "CONSUMPTION",
+              "PRESSURE",
+              "GAS_PRESENCE",
+              "VALVE_STATE"
+            ],
+            "example": "PRESSURE"
+          },
+          "operator": {
+            "type": "string",
+            "description": "Comparison operator",
+            "enum": [
+              "GREATER_THAN",
+              "GREATER_THAN_OR_EQUAL",
+              "LESS_THAN",
+              "LESS_THAN_OR_EQUAL",
+              "EQUALS",
+              "NOT_EQUALS",
+              "IS_TRUE",
+              "IS_FALSE"
+            ],
+            "example": "LESS_THAN"
+          },
+          "threshold": {
+            "type": "number",
+            "description": "Numeric threshold; required for numeric metrics",
+            "example": 0.5
+          },
+          "severity": {
+            "type": "string",
+            "description": "Alert severity",
+            "enum": [
+              "INFO",
+              "WARNING",
+              "CRITICAL"
+            ],
+            "example": "CRITICAL"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable rule description",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Whether the rule is active",
+            "example": true
+          }
+        },
+        "required": [
+          "metric",
+          "name",
+          "operator",
+          "severity"
+        ]
+      },
+      "alerting_NotificationAttemptResource": {
+        "type": "object",
+        "description": "Append-only notification delivery attempt",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "attemptNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "type": "string"
+          },
+          "providerMessageId": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "attemptedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "monitoring_ConsumptionReportDto": {
+        "type": "object",
+        "properties": {
+          "reportId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "currency": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "totalVolumeM3": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalEstimatedCost": {
+            "type": "number",
+            "format": "double"
+          },
+          "meterRows": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/monitoring_ReportLineDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "monitoring_ConsumptionResponseDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "calculatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currency": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "pricePerM3": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalVolumeM3": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalEstimatedCost": {
+            "type": "number",
+            "format": "double"
+          },
+          "meters": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/monitoring_MeterConsumptionDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "monitoring_LiveReadingDto": {
+        "type": "object",
+        "properties": {
+          "meterId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "measuredAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "totalVolumeM3": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "pressureKpa": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "gasDetected": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "valveOpen": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "freshness": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "monitoring_MeterConsumptionDto": {
+        "type": "object",
+        "properties": {
+          "meterId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "volumeM3": {
+            "type": "number",
+            "format": "double"
+          },
+          "estimatedCost": {
+            "type": "number",
+            "format": "double"
+          },
+          "readingsCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "firstReadingAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "lastReadingAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "monthlyEstimateM3": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "monthlyEstimateCost": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "monitoring_ReportLineDto": {
+        "type": "object",
+        "properties": {
+          "meterId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "volumeM3": {
+            "type": "number",
+            "format": "double"
+          },
+          "estimatedCost": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
       }
     }
   }

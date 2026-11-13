@@ -1,0 +1,10 @@
+{
+  "service": "smartgn-api-gateway",
+  "version": 1,
+  "records": [
+    {
+      "alias": "demo-gateway-spa",
+      "origin": "http://localhost:5173"
+    }
+  ]
+}

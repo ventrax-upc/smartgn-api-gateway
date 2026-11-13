@@ -538,5 +538,113 @@
     "path": "/api/v1/payment-methods/{id}",
     "service": "billing",
     "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/alert-rules/{ruleId}",
+    "service": "alerting",
+    "public": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/alert-rules/{ruleId}",
+    "service": "alerting",
+    "public": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/alert-rules/{ruleId}",
+    "service": "alerting",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notification-preferences",
+    "service": "alerting",
+    "public": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/notification-preferences",
+    "service": "alerting",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/alerts/{alertId}/resolve",
+    "service": "alerting",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/alerts/{alertId}/acknowledge",
+    "service": "alerting",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/alert-rules",
+    "service": "alerting",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/alert-rules",
+    "service": "alerting",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications",
+    "service": "alerting",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications/{notificationId}",
+    "service": "alerting",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications/{notificationId}/attempts",
+    "service": "alerting",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/alerts",
+    "service": "alerting",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/alerts/{alertId}",
+    "service": "alerting",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/alerts/{alertId}/notifications",
+    "service": "alerting",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/analytics/live",
+    "service": "monitoring",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/analytics/consumption",
+    "service": "monitoring",
+    "public": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/analytics/reports",
+    "service": "monitoring",
+    "public": false
   }
 ]

@@ -1,170 +1,527 @@
-name: smartgn-billing-integration
+name: smartgn-dev
 services:
-  db:
-    image: postgres:17.6
-    environment: {POSTGRES_DB: billing_db, POSTGRES_USER: smartgn_billing, POSTGRES_PASSWORD: '${DB_PASSWORD}'}
-    volumes: [billing-integration-data:/var/lib/postgresql/data]
-    healthcheck: {test: [CMD-SHELL, 'pg_isready -U smartgn_billing -d billing_db'], interval: 2s, timeout: 2s, retries: 30}
-  broker:
-    volumes: !override ["../smartgn-payments-billing/.local/mqtt:/mosquitto/config:ro", "mqtt-data:/mosquitto/data"]
-    extends: {file: ../smartgn-payments-billing/compose.yml, service: broker}
-    ports: !override ["127.0.0.1:1885:1883"]
-  billing:
-    build: ../smartgn-payments-billing
-    volumes: !override ["../smartgn-payments-billing/.local/tax.p12:/run/secrets/tax.p12:ro"]
-    extends: {file: ../smartgn-payments-billing/compose.yml, service: billing}
-    ports: !override ["127.0.0.1:28083:8083"]
+  config:
+    build: ../smartgn-config
+    ports: ['127.0.0.1:8088:8088']
+    mem_limit: 320m
     environment:
-      SUPPORT_BASE_URL: http://support:8082
-      IAM_BASE_URL: http://iam:8080
-      INSTALLATION_BASE_URL: http://installation:8081
-      MQTT_CLIENT_ID: smartgn-billing-integration
+      SPRING_CLOUD_CONFIG_SERVER_HEALTH_REPOSITORIES_LOCAL_NAME: "smartgn-admin"
+      SPRING_CLOUD_CONFIG_SERVER_HEALTH_REPOSITORIES_LOCAL_PROFILES: "local"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_SERVICE_URL: "http://config:8088"
+      ADMIN_SERVICE_URL: "http://config:8088"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_MANAGEMENT_URL: "http://config:8088/actuator"
+      ADMIN_MANAGEMENT_URL: "http://config:8088/actuator"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_HEALTH_URL: "http://config:8088/actuator/health"
+      ADMIN_HEALTH_URL: "http://config:8088/actuator/health"
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=48 -XX:ActiveProcessorCount=2"
+      SPRING_BOOT_ADMIN_CLIENT_URL: "http://admin:8089"
+      SPRING_BOOT_ADMIN_CLIENT_USERNAME: "smartgn-local"
+      SPRING_BOOT_ADMIN_CLIENT_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info"
+  admin:
+    build: ../smartgn-admin
+    ports: ['127.0.0.1:8089:8089']
+    mem_limit: 320m
+    environment:
+      SPRING_APPLICATION_NAME: "smartgn-admin"
+      SPRING_CLOUD_CONFIG_NAME: "smartgn-admin"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_SERVICE_URL: "http://admin:8089"
+      ADMIN_SERVICE_URL: "http://admin:8089"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_MANAGEMENT_URL: "http://admin:8089/actuator"
+      ADMIN_MANAGEMENT_URL: "http://admin:8089/actuator"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_HEALTH_URL: "http://admin:8089/actuator/health"
+      ADMIN_HEALTH_URL: "http://admin:8089/actuator/health"
+      SMARTGN_CONFIG_URL: "http://config:8088"
+      SMARTGN_CONFIG_PROFILE: "local"
+      SMARTGN_CONFIG_REQUIRED: "true"
+      SMARTGN_ADMIN_URL: "http://admin:8089"
+      SMARTGN_ADMIN_USERNAME: "smartgn-local"
+      SMARTGN_ADMIN_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      SPRING_CONFIG_IMPORT: "configserver:http://config:8088"
+      SPRING_CLOUD_CONFIG_PROFILE: "local"
+      SPRING_BOOT_ADMIN_CLIENT_URL: "http://admin:8089"
+      SPRING_BOOT_ADMIN_CLIENT_USERNAME: "smartgn-local"
+      SPRING_BOOT_ADMIN_CLIENT_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=48 -XX:ActiveProcessorCount=2"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info"
     depends_on:
-      db: {condition: service_healthy}
-  iam-db:
-    image: postgres:18
-    environment: {POSTGRES_DB: iam_db, POSTGRES_USER: smartgn_iam, POSTGRES_PASSWORD: '${DB_PASSWORD}'}
-    volumes: [iam-integration-data:/var/lib/postgresql]
-    healthcheck: {test: [CMD-SHELL, 'pg_isready -U smartgn_iam -d iam_db'], interval: 2s, timeout: 2s, retries: 30}
-  installation-db:
-    image: postgres:17.6
-    environment: {POSTGRES_DB: installation_db, POSTGRES_USER: smartgn_installation, POSTGRES_PASSWORD: '${DB_PASSWORD}'}
-    volumes: [installation-integration-data:/var/lib/postgresql/data]
-    healthcheck: {test: [CMD-SHELL, 'pg_isready -U smartgn_installation -d installation_db'], interval: 2s, timeout: 2s, retries: 30}
+      config: {condition: service_healthy}
+  message-broker:
+    build: ../smartgn-message-broker
+    ports: ['127.0.0.1:8087:8087']
+    mem_limit: 320m
+    environment:
+      SPRING_APPLICATION_NAME: "smartgn-message-broker"
+      SPRING_CLOUD_CONFIG_NAME: "smartgn-message-broker"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_SERVICE_URL: "http://message-broker:8087"
+      ADMIN_SERVICE_URL: "http://message-broker:8087"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_MANAGEMENT_URL: "http://message-broker:8087/actuator"
+      ADMIN_MANAGEMENT_URL: "http://message-broker:8087/actuator"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_HEALTH_URL: "http://message-broker:8087/actuator/health"
+      ADMIN_HEALTH_URL: "http://message-broker:8087/actuator/health"
+      SMARTGN_CONFIG_URL: "http://config:8088"
+      SMARTGN_CONFIG_PROFILE: "local"
+      SMARTGN_CONFIG_REQUIRED: "true"
+      SMARTGN_ADMIN_URL: "http://admin:8089"
+      SMARTGN_ADMIN_USERNAME: "smartgn-local"
+      SMARTGN_ADMIN_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      SPRING_CONFIG_IMPORT: "configserver:http://config:8088"
+      SPRING_CLOUD_CONFIG_PROFILE: "local"
+      SPRING_BOOT_ADMIN_CLIENT_URL: "http://admin:8089"
+      SPRING_BOOT_ADMIN_CLIENT_USERNAME: "smartgn-local"
+      SPRING_BOOT_ADMIN_CLIENT_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=48 -XX:ActiveProcessorCount=2"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info"
+      PORT: "8087"
+      SERVER_PORT: "8087"
+      JWT_SECRET: "${JWT_SECRET:?Run scripts/start-integrated.ps1}"
+      INTERNAL_SERVICE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+      EMQX_API_URL: "http://emqx:18083/api/v5"
+      EMQX_API_KEY: "${DEVICE_BROKER_API_KEY:?Run scripts/start-integrated.ps1}"
+      EMQX_API_SECRET: "${DEVICE_BROKER_API_SECRET:?Run scripts/start-integrated.ps1}"
+      MQTT_URL: "tcp://emqx:1883"
+      MQTT_BROKER_HOST: "emqx"
+      MQTT_USERNAME: "broker-service"
+      MQTT_BROKER_PASSWORD: "${MQTT_BROKER_PASSWORD:?Run scripts/start-integrated.ps1}"
+    depends_on:
+      config: {condition: service_healthy}
+      emqx-init: {condition: service_completed_successfully}
   iam:
     build: ../smartgn-iam
-    ports: ["127.0.0.1:18080:8080"]
+    ports: ['127.0.0.1:8080:8080']
+    mem_limit: 448m
     environment:
-      DB_URL: jdbc:postgresql://iam-db:5432/iam_db
-      DB_USERNAME: smartgn_iam
-      DB_PASSWORD: ${DB_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
-      DELIVERY_ENCRYPTION_KEY: ${DELIVERY_ENCRYPTION_KEY}
-      NOTIFICATION_DELIVERY_URL: http://delivery:8091/local-contracts/notifications
-      NOTIFICATION_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
-      INSTALLATION_BASE_URL: http://installation:8081
-      SMARTGN_BILLING_BASE_URL: http://billing:8083
-      SMARTGN_BILLING_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
-      IDENTITY_EVENT_SINK_URL: http://delivery:8091/local-contracts/events
-      IDENTITY_EVENT_SINK_TOKEN: ${INTERNAL_SERVICE_TOKEN}
-      SPRING_PROFILES_ACTIVE: local-bootstrap
-      BOOTSTRAP_SUPERADMIN_EMAIL: admin@smartgn.test
-      BOOTSTRAP_SUPERADMIN_PASSWORD: ${BOOTSTRAP_SUPERADMIN_PASSWORD}
-    depends_on: {iam-db: {condition: service_healthy}}
+      SPRING_APPLICATION_NAME: "smartgn-iam-service"
+      SPRING_CLOUD_CONFIG_NAME: "smartgn-iam-service"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_SERVICE_URL: "http://iam:8080"
+      ADMIN_SERVICE_URL: "http://iam:8080"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_MANAGEMENT_URL: "http://iam:8080/actuator"
+      ADMIN_MANAGEMENT_URL: "http://iam:8080/actuator"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_HEALTH_URL: "http://iam:8080/actuator/health"
+      ADMIN_HEALTH_URL: "http://iam:8080/actuator/health"
+      SMARTGN_CONFIG_URL: "http://config:8088"
+      SMARTGN_CONFIG_PROFILE: "local"
+      SMARTGN_CONFIG_REQUIRED: "true"
+      SMARTGN_ADMIN_URL: "http://admin:8089"
+      SMARTGN_ADMIN_USERNAME: "smartgn-local"
+      SMARTGN_ADMIN_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      SPRING_CONFIG_IMPORT: "configserver:http://config:8088"
+      SPRING_CLOUD_CONFIG_PROFILE: "local"
+      SPRING_BOOT_ADMIN_CLIENT_URL: "http://admin:8089"
+      SPRING_BOOT_ADMIN_CLIENT_USERNAME: "smartgn-local"
+      SPRING_BOOT_ADMIN_CLIENT_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=48 -XX:ActiveProcessorCount=2"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info"
+      JWT_SECRET: "${JWT_SECRET:?Run scripts/start-integrated.ps1}"
+      INTERNAL_SERVICE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "8"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      DB_URL: "jdbc:postgresql://postgres:5432/iam_db"
+      DB_PASSWORD: "${DB_IAM_DB:?Run scripts/start-integrated.ps1}"
+      DB_USERNAME: "smartgn_iam"
+      SPRING_PROFILES_ACTIVE: "local-bootstrap"
+      DELIVERY_ENCRYPTION_KEY: "${DELIVERY_ENCRYPTION_KEY:?Run scripts/start-integrated.ps1}"
+      BOOTSTRAP_SUPERADMIN_PASSWORD: "${BOOTSTRAP_SUPERADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      BOOTSTRAP_SUPERADMIN_EMAIL: "admin@smartgn.test"
+      NOTIFICATION_DELIVERY_URL: "http://delivery:8091/local-contracts/notifications"
+      NOTIFICATION_SERVICE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+      IDENTITY_EVENT_SINK_URL: "http://delivery:8091/local-contracts/events"
+      IDENTITY_EVENT_SINK_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+      INSTALLATION_BASE_URL: "http://installation:8081"
+      SMARTGN_BILLING_BASE_URL: "http://billing:8083"
+      SMARTGN_BILLING_SERVICE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+    depends_on:
+      config: {condition: service_healthy}
+      postgres: {condition: service_healthy}
+
   installation:
     build: ../smartgn-installation-device-management
-    ports: ["127.0.0.1:18081:8081"]
+    ports: ['127.0.0.1:8081:8081']
+    mem_limit: 448m
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://installation-db:5432/installation_db
-      SPRING_DATASOURCE_USERNAME: smartgn_installation
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      DEVICE_CREDENTIAL_KEY: ${DEVICE_CREDENTIAL_KEY}
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
-      EMQX_PASSWORD: ${MQTT_PASSWORD}
-      EMQX_API_URL: http://device-broker:18083/api/v5
-      EMQX_API_KEY: ${DEVICE_BROKER_API_KEY}
-      EMQX_API_SECRET: ${DEVICE_BROKER_API_SECRET}
-      TELEMETRY_BASE_URL: http://telemetry-fixture:8090
-      SMARTGN_IAM_BASE_URL: http://iam:8080
-      SMARTGN_EVENTS_SINK_URL: http://billing:8083/internal/v1/events
-      SMARTGN_EVENTS_SINK_TOKEN: ${INTERNAL_SERVICE_TOKEN}
-    depends_on: {installation-db: {condition: service_healthy}}
-  delivery:
-    image: python:3.13-slim
-    command: [python, /tools/local-delivery-fixture.py]
-    ports: ["127.0.0.1:18091:8091"]
-    environment:
-      FIXTURE_ADMIN_TOKEN: ${FIXTURE_ADMIN_TOKEN}
-      NOTIFICATION_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
-      EVENT_FIXTURE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
-    volumes: ["../smartgn-payments-billing/tools:/tools:ro", "delivery-data:/data"]
-  support-db:
-    image: postgres:17.6
-    environment:
-      POSTGRES_DB: smartgn_support_db
-      POSTGRES_USER: smartgn_support
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes: [support-integration-db:/var/lib/postgresql/data]
-    healthcheck:
-      test: [CMD-SHELL, "pg_isready -U smartgn_support -d smartgn_support_db"]
-      interval: 3s
-      timeout: 3s
-      retries: 30
-  support:
-    build: ${SUPPORT_REPO_PATH:-../smartgn-support-maintenance}
-    environment:
-      DB_URL: jdbc:postgresql://support-db:5432/smartgn_support_db
-      DB_PASSWORD: ${DB_PASSWORD}
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
-      IAM_BASE_URL: http://iam:8080
-      INSTALLATION_BASE_URL: http://installation:8081
-      BILLING_BASE_URL: http://billing:8083
-      PHOTO_PATH: /data/photos
-      MQTT_URL: ${SUPPORT_MQTT_URL:-}
-      MQTT_USERNAME: support-service
-      MQTT_PASSWORD: ${MQTT_SUPPORT_PASSWORD}
-      MQTT_CLIENT_ID: smartgn-support-integration
-    ports: ["127.0.0.1:8082:8082"]
-    volumes: [support-integration-photos:/data]
+      SPRING_APPLICATION_NAME: "smartgn-installation-device-management"
+      SPRING_CLOUD_CONFIG_NAME: "smartgn-installation-device-management"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_SERVICE_URL: "http://installation:8081"
+      ADMIN_SERVICE_URL: "http://installation:8081"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_MANAGEMENT_URL: "http://installation:8081/actuator"
+      ADMIN_MANAGEMENT_URL: "http://installation:8081/actuator"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_HEALTH_URL: "http://installation:8081/actuator/health"
+      ADMIN_HEALTH_URL: "http://installation:8081/actuator/health"
+      SMARTGN_CONFIG_URL: "http://config:8088"
+      SMARTGN_CONFIG_PROFILE: "local"
+      SMARTGN_CONFIG_REQUIRED: "true"
+      SMARTGN_ADMIN_URL: "http://admin:8089"
+      SMARTGN_ADMIN_USERNAME: "smartgn-local"
+      SMARTGN_ADMIN_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      SPRING_CONFIG_IMPORT: "configserver:http://config:8088"
+      SPRING_CLOUD_CONFIG_PROFILE: "local"
+      SPRING_BOOT_ADMIN_CLIENT_URL: "http://admin:8089"
+      SPRING_BOOT_ADMIN_CLIENT_USERNAME: "smartgn-local"
+      SPRING_BOOT_ADMIN_CLIENT_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=48 -XX:ActiveProcessorCount=2"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info"
+      JWT_SECRET: "${JWT_SECRET:?Run scripts/start-integrated.ps1}"
+      INTERNAL_SERVICE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "8"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/installation_db"
+      SPRING_DATASOURCE_USERNAME: "smartgn_installation"
+      SPRING_DATASOURCE_PASSWORD: "${DB_INSTALLATION_DB:?Run scripts/start-integrated.ps1}"
+      DEVICE_CREDENTIAL_KEY: "${DEVICE_CREDENTIAL_KEY:?Run scripts/start-integrated.ps1}"
+      EMQX_API_URL: "http://emqx:18083/api/v5"
+      EMQX_API_KEY: "${DEVICE_BROKER_API_KEY:?Run scripts/start-integrated.ps1}"
+      EMQX_API_SECRET: "${DEVICE_BROKER_API_SECRET:?Run scripts/start-integrated.ps1}"
+      EMQX_PASSWORD: "${MQTT_PASSWORD:?Run scripts/start-integrated.ps1}"
+      TELEMETRY_BASE_URL: "http://telemetry:8085"
+      SMARTGN_IAM_BASE_URL: "http://iam:8080"
+      SMARTGN_EVENTS_SINK_URL: "http://billing:8083/internal/v1/events"
+      SMARTGN_EVENTS_SINK_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
     depends_on:
-      support-db: {condition: service_healthy}
+      config: {condition: service_healthy}
+      postgres: {condition: service_healthy}
+      emqx-init: {condition: service_completed_successfully}
+
+  support:
+    build: ../smartgn-support-maintenance
+    ports: ['127.0.0.1:8082:8082']
+    mem_limit: 448m
+    environment:
+      SPRING_APPLICATION_NAME: "support-maintenance-service"
+      SPRING_CLOUD_CONFIG_NAME: "support-maintenance-service"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_SERVICE_URL: "http://support:8082"
+      ADMIN_SERVICE_URL: "http://support:8082"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_MANAGEMENT_URL: "http://support:8082/actuator"
+      ADMIN_MANAGEMENT_URL: "http://support:8082/actuator"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_HEALTH_URL: "http://support:8082/actuator/health"
+      ADMIN_HEALTH_URL: "http://support:8082/actuator/health"
+      SMARTGN_CONFIG_URL: "http://config:8088"
+      SMARTGN_CONFIG_PROFILE: "local"
+      SMARTGN_CONFIG_REQUIRED: "true"
+      SMARTGN_ADMIN_URL: "http://admin:8089"
+      SMARTGN_ADMIN_USERNAME: "smartgn-local"
+      SMARTGN_ADMIN_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      SPRING_CONFIG_IMPORT: "configserver:http://config:8088"
+      SPRING_CLOUD_CONFIG_PROFILE: "local"
+      SPRING_BOOT_ADMIN_CLIENT_URL: "http://admin:8089"
+      SPRING_BOOT_ADMIN_CLIENT_USERNAME: "smartgn-local"
+      SPRING_BOOT_ADMIN_CLIENT_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=48 -XX:ActiveProcessorCount=2"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info"
+      JWT_SECRET: "${JWT_SECRET:?Run scripts/start-integrated.ps1}"
+      INTERNAL_SERVICE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "8"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      DB_URL: "jdbc:postgresql://postgres:5432/smartgn_support_db"
+      DB_PASSWORD: "${DB_SMARTGN_SUPPORT_DB:?Run scripts/start-integrated.ps1}"
+      IAM_BASE_URL: "http://iam:8080"
+      INSTALLATION_BASE_URL: "http://installation:8081"
+      BILLING_BASE_URL: "http://billing:8083"
+      PHOTO_PATH: "/data/photos"
+      SMARTGN_IAM_URL: "http://iam:8080"
+      SMARTGN_INSTALLATION_URL: "http://installation:8081"
+      SMARTGN_BILLING_URL: "http://billing:8083"
+      SMARTGN_INTERNAL_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+      SMARTGN_PHOTO_PATH: "/data/photos"
+      SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
+      MQTT_URL: "tcp://emqx:1883"
+      MQTT_USERNAME: "support-service"
+      MQTT_PASSWORD: "${MQTT_SUPPORT_PASSWORD:?Run scripts/start-integrated.ps1}"
+    depends_on:
+      config: {condition: service_healthy}
+      postgres: {condition: service_healthy}
+      emqx-init: {condition: service_completed_successfully}
+    volumes: [support-photos:/data]
+  billing:
+    build: ../smartgn-payments-billing
+    ports: ['127.0.0.1:8083:8083']
+    mem_limit: 448m
+    environment:
+      SPRING_APPLICATION_NAME: "smartgn-payments-billing"
+      SPRING_CLOUD_CONFIG_NAME: "smartgn-payments-billing"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_SERVICE_URL: "http://billing:8083"
+      ADMIN_SERVICE_URL: "http://billing:8083"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_MANAGEMENT_URL: "http://billing:8083/actuator"
+      ADMIN_MANAGEMENT_URL: "http://billing:8083/actuator"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_HEALTH_URL: "http://billing:8083/actuator/health"
+      ADMIN_HEALTH_URL: "http://billing:8083/actuator/health"
+      SMARTGN_CONFIG_URL: "http://config:8088"
+      SMARTGN_CONFIG_PROFILE: "local"
+      SMARTGN_CONFIG_REQUIRED: "true"
+      SMARTGN_ADMIN_URL: "http://admin:8089"
+      SMARTGN_ADMIN_USERNAME: "smartgn-local"
+      SMARTGN_ADMIN_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      SPRING_CONFIG_IMPORT: "configserver:http://config:8088"
+      SPRING_CLOUD_CONFIG_PROFILE: "local"
+      SPRING_BOOT_ADMIN_CLIENT_URL: "http://admin:8089"
+      SPRING_BOOT_ADMIN_CLIENT_USERNAME: "smartgn-local"
+      SPRING_BOOT_ADMIN_CLIENT_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=48 -XX:ActiveProcessorCount=2"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info"
+      JWT_SECRET: "${JWT_SECRET:?Run scripts/start-integrated.ps1}"
+      INTERNAL_SERVICE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "8"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      DB_URL: "jdbc:postgresql://postgres:5432/billing_db"
+      DB_PASSWORD: "${DB_BILLING_DB:?Run scripts/start-integrated.ps1}"
+      SPRING_PROFILES_ACTIVE: "local"
+      CARD_ENCRYPTION_KEY: "${CARD_ENCRYPTION_KEY:?Run scripts/start-integrated.ps1}"
+      TAX_KEY_PASSWORD: "${TAX_KEY_PASSWORD:?Run scripts/start-integrated.ps1}"
+      TAX_KEYSTORE_PATH: "/run/secrets/tax.p12"
+      SUNAT_MODE: "local"
+      MQTT_URL: "tcp://emqx:1883"
+      MQTT_USERNAME: "billing-service"
+      MQTT_PASSWORD: "${MQTT_BILLING_PASSWORD:?Run scripts/start-integrated.ps1}"
+      SUPPORT_BASE_URL: "http://support:8082"
+      IAM_BASE_URL: "http://iam:8080"
+      INSTALLATION_BASE_URL: "http://installation:8081"
+    depends_on:
+      config: {condition: service_healthy}
+      postgres: {condition: service_healthy}
+      emqx-init: {condition: service_completed_successfully}
+    volumes: ['./.local/tax.p12:/run/secrets/tax.p12:ro']
+  alerting:
+    build: ../smartgn-alerting-notifications
+    ports: ['127.0.0.1:8086:8086']
+    mem_limit: 448m
+    environment:
+      PORT: "8086"
+      SPRING_APPLICATION_NAME: "alerting-notifications-service"
+      SPRING_CLOUD_CONFIG_NAME: "alerting-notifications-service"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_SERVICE_URL: "http://alerting:8086"
+      ADMIN_SERVICE_URL: "http://alerting:8086"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_MANAGEMENT_URL: "http://alerting:8086/actuator"
+      ADMIN_MANAGEMENT_URL: "http://alerting:8086/actuator"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_HEALTH_URL: "http://alerting:8086/actuator/health"
+      ADMIN_HEALTH_URL: "http://alerting:8086/actuator/health"
+      SMARTGN_CONFIG_URL: "http://config:8088"
+      SMARTGN_CONFIG_PROFILE: "local"
+      SMARTGN_CONFIG_REQUIRED: "true"
+      SMARTGN_ADMIN_URL: "http://admin:8089"
+      SMARTGN_ADMIN_USERNAME: "smartgn-local"
+      SMARTGN_ADMIN_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      SPRING_CONFIG_IMPORT: "configserver:http://config:8088"
+      SPRING_CLOUD_CONFIG_PROFILE: "local"
+      SPRING_BOOT_ADMIN_CLIENT_URL: "http://admin:8089"
+      SPRING_BOOT_ADMIN_CLIENT_USERNAME: "smartgn-local"
+      SPRING_BOOT_ADMIN_CLIENT_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=48 -XX:ActiveProcessorCount=2"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info"
+      JWT_SECRET: "${JWT_SECRET:?Run scripts/start-integrated.ps1}"
+      INTERNAL_SERVICE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "8"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      DB_URL: "jdbc:postgresql://postgres:5432/smartgn_alerting_db?currentSchema=alerting"
+      DB_PASSWORD: "${DB_SMARTGN_ALERTING_DB:?Run scripts/start-integrated.ps1}"
+      DB_USERNAME: "smartgn_alerting"
+      SECURITY_ENABLED: "true"
+      NOTIFICATIONS_MODE: "simulated"
+      SMARTGN_GATEWAY_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+    depends_on:
+      config: {condition: service_healthy}
+      postgres: {condition: service_healthy}
+
+  telemetry:
+    build: ../smartgn-telemetry-data-ingestion
+    ports: ['127.0.0.1:8085:8085']
+    mem_limit: 256m
+    environment:
+      SMARTGN_CONFIG_URL: "http://config:8088"
+      SMARTGN_CONFIG_PROFILE: "local"
+      SMARTGN_CONFIG_REQUIRED: "true"
+      SMARTGN_ADMIN_URL: "http://admin:8089"
+      SMARTGN_ADMIN_USERNAME: "smartgn-local"
+      SMARTGN_ADMIN_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      JWT_SECRET: "${JWT_SECRET:?Run scripts/start-integrated.ps1}"
+      INTERNAL_SERVICE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+      INFLUX_TOKEN: "${INFLUX_TOKEN:?Run scripts/start-integrated.ps1}"
+      SMARTGN_SERVICE_URL: "http://telemetry:8085"
+      PORT: "8085"
+      GRPC_PORT: "9084"
+      MQTT_URL: "tcp://emqx:1883"
+      MQTT_USERNAME: "telemetry-service"
+      MQTT_PASSWORD: "${MQTT_TELEMETRY_PASSWORD:?Run scripts/start-integrated.ps1}"
+      INFLUX_URL: "http://influxdb:8086"
+      INFLUX_ORG: "smartgn"
+      INFLUX_BUCKET: "telemetry"
+      INSTALLATION_BASE_URL: "http://installation:8081"
+      ALERTING_EVENTS_SINK_URL: "http://alerting:8086/internal/v1/telemetry-events"
+    depends_on:
+      config: {condition: service_healthy}
+      influxdb: {condition: service_healthy}
+      emqx-init: {condition: service_completed_successfully}
+
+  monitoring:
+    build: ../smartgn-monitoring-analytics
+    ports: ['127.0.0.1:8084:8084']
+    mem_limit: 256m
+    environment:
+      SMARTGN_CONFIG_URL: "http://config:8088"
+      SMARTGN_CONFIG_PROFILE: "local"
+      SMARTGN_CONFIG_REQUIRED: "true"
+      SMARTGN_ADMIN_URL: "http://admin:8089"
+      SMARTGN_ADMIN_USERNAME: "smartgn-local"
+      SMARTGN_ADMIN_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      JWT_SECRET: "${JWT_SECRET:?Run scripts/start-integrated.ps1}"
+      INTERNAL_SERVICE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+      ASPNETCORE_ENVIRONMENT: "Development"
+      SMARTGN_SERVICE_URL: "http://monitoring:8084"
+      ASPNETCORE_URLS: "http://+:8084"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=smartgn_monitoring;Username=smartgn_monitoring;Password=${DB_SMARTGN_MONITORING:?Run scripts/start-integrated.ps1};Maximum Pool Size=8"
+      ConnectionStrings__RedisConnection: "redis:6379"
+      IAM_BASE_URL: "http://iam:8080"
+      TELEMETRY_GRPC_URL: "http://telemetry:9084"
+      BILLING_GRPC_URL: "http://billing:9083"
+    depends_on:
+      config: {condition: service_healthy}
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, bash, /app/health.sh]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 10
   api-gateway:
     build: ../smartgn-api-gateway
-    env_file: ../smartgn-api-gateway/.env
+    mem_limit: 128m
     environment:
-      API_PORT: 8000
-      JWT_SECRET: ${JWT_SECRET}
-      IAM_URL: http://iam:8080
-      INSTALLATION_URL: http://installation:8081
-      SUPPORT_URL: http://support:8082
-      BILLING_URL: http://billing:8083
-    ports: ["127.0.0.1:8000:8000"]
-    init: true
+      SMARTGN_CONFIG_URL: "http://config:8088"
+      SMARTGN_CONFIG_PROFILE: "local"
+      SMARTGN_CONFIG_REQUIRED: "true"
+      SMARTGN_ADMIN_URL: "http://admin:8089"
+      SMARTGN_ADMIN_USERNAME: "smartgn-local"
+      SMARTGN_ADMIN_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      JWT_SECRET: "${JWT_SECRET:?Run scripts/start-integrated.ps1}"
+      INTERNAL_SERVICE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+      API_PORT: "8000"
+      RATE_LIMIT_MAX: "${RATE_LIMIT_MAX:-300}"
+      IAM_URL: "http://iam:8080"
+      INSTALLATION_URL: "http://installation:8081"
+      SUPPORT_URL: "http://support:8082"
+      BILLING_URL: "http://billing:8083"
+      MONITORING_URL: "http://monitoring:8084"
+      ALERTING_URL: "http://alerting:8086"
+      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:5173}"
     depends_on:
+      config: {condition: service_healthy}
       iam: {condition: service_healthy}
       installation: {condition: service_healthy}
       support: {condition: service_healthy}
       billing: {condition: service_healthy}
-  device-broker:
-    image: emqx/emqx:5.8.8
+      monitoring: {condition: service_healthy}
+      alerting: {condition: service_healthy}
+    init: true
+    ports: ['127.0.0.1:8000:8000']
+  postgres:
+    image: postgres:18
+    mem_limit: 448m
+    command: [postgres, -c, shared_buffers=64MB, -c, max_connections=75]
     environment:
-      EMQX_DASHBOARD__DEFAULT_USERNAME: admin
-      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${MQTT_PASSWORD}
-      EMQX_API_KEY__BOOTSTRAP_FILE: /opt/emqx/etc/bootstrap-api-keys
-      EMQX_AUTHORIZATION__NO_MATCH: deny
-      EMQX_AUTHORIZATION__CACHE__ENABLE: "false"
-      EMQX_AUTHORIZATION__SOURCES: '[{type = built_in_database, enable = true}]'
-      EMQX_AUTHENTICATION: '[{mechanism = password_based, backend = built_in_database, user_id_type = username}]'
-    volumes:
-      - ../smartgn-payments-billing/.local/device-broker/bootstrap-api-keys:/opt/emqx/etc/bootstrap-api-keys:ro
-      - device-broker-data:/opt/emqx/data
-    ports: ["127.0.0.1:1886:1883", "127.0.0.1:18086:18083"]
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Run scripts/start-integrated.ps1}"
+      DB_IAM_DB: "${DB_IAM_DB:?Run scripts/start-integrated.ps1}"
+      DB_INSTALLATION_DB: "${DB_INSTALLATION_DB:?Run scripts/start-integrated.ps1}"
+      DB_SMARTGN_SUPPORT_DB: "${DB_SMARTGN_SUPPORT_DB:?Run scripts/start-integrated.ps1}"
+      DB_BILLING_DB: "${DB_BILLING_DB:?Run scripts/start-integrated.ps1}"
+      DB_SMARTGN_ALERTING_DB: "${DB_SMARTGN_ALERTING_DB:?Run scripts/start-integrated.ps1}"
+      DB_SMARTGN_MONITORING: "${DB_SMARTGN_MONITORING:?Run scripts/start-integrated.ps1}"
+    volumes: [postgres-data:/var/lib/postgresql, './tools/integrated/init-postgres.sql:/docker-entrypoint-initdb.d/01-smartgn.sql:ro']
     healthcheck:
-      test: [CMD-SHELL, '/opt/emqx/bin/emqx ctl status']
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U postgres']
+      interval: 4s
+      timeout: 4s
+      retries: 30
+  redis:
+    image: redis:7-alpine
+    mem_limit: 96m
+    command: [redis-server, --maxmemory, 48mb, --maxmemory-policy, allkeys-lru]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  influxdb:
+    image: influxdb:2.7
+    mem_limit: 512m
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: "setup"
+      DOCKER_INFLUXDB_INIT_USERNAME: "smartgn"
+      DOCKER_INFLUXDB_INIT_PASSWORD: "${INFLUX_PASSWORD:?Run scripts/start-integrated.ps1}"
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: "${INFLUX_TOKEN:?Run scripts/start-integrated.ps1}"
+      DOCKER_INFLUXDB_INIT_ORG: "smartgn"
+      DOCKER_INFLUXDB_INIT_BUCKET: "telemetry"
+      DOCKER_INFLUXDB_INIT_RETENTION: "30d"
+    volumes: [influx-data:/var/lib/influxdb2, influx-config:/etc/influxdb2]
+    healthcheck:
+      test: [CMD, influx, ping]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  emqx:
+    image: emqx/emqx:5.8.8
+    hostname: emqx
+    mem_limit: 512m
+    environment:
+      EMQX_NODE__NAME: "emqx@emqx"
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: "${MQTT_PASSWORD:?Run scripts/start-integrated.ps1}"
+      EMQX_API_KEY__BOOTSTRAP_FILE: "/opt/emqx/etc/bootstrap-api-keys"
+      EMQX_AUTHORIZATION__NO_MATCH: "deny"
+      EMQX_AUTHORIZATION__CACHE__ENABLE: "false"
+      EMQX_AUTHORIZATION__SOURCES: "[{type = built_in_database, enable = true}]"
+      EMQX_AUTHENTICATION: "[{mechanism = password_based, backend = built_in_database, user_id_type = username}]"
+    volumes: [emqx-data:/opt/emqx/data, './.local/bootstrap-api-keys:/opt/emqx/etc/bootstrap-api-keys:ro']
+    healthcheck:
+      test: [CMD-SHELL, 'curl -fsS http://127.0.0.1:18083/status >/dev/null && bash -c "true </dev/tcp/127.0.0.1/1883"']
       interval: 10s
       timeout: 10s
-      start_period: 30s
-      retries: 30
-  telemetry-fixture:
+      start_period: 20s
+      retries: 15
+  emqx-init:
     image: python:3.13-slim
-    command: [python, /tools/local-telemetry-simulator.py]
+    mem_limit: 64m
     environment:
-      TELEMETRY_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
-      SIMULATOR_ADMIN_TOKEN: ${FIXTURE_ADMIN_TOKEN}
-      SIMULATOR_DB: /data/telemetry.sqlite
-      PORT: "8090"
-    volumes: ["../smartgn-installation-device-management/tools:/tools:ro", "telemetry-fixture-data:/data"]
-    ports: ["127.0.0.1:18090:8090"]
+      DEVICE_BROKER_API_KEY: "${DEVICE_BROKER_API_KEY:?Run scripts/start-integrated.ps1}"
+      DEVICE_BROKER_API_SECRET: "${DEVICE_BROKER_API_SECRET:?Run scripts/start-integrated.ps1}"
+      MQTT_SUPPORT_PASSWORD: "${MQTT_SUPPORT_PASSWORD:?Run scripts/start-integrated.ps1}"
+      MQTT_BILLING_PASSWORD: "${MQTT_BILLING_PASSWORD:?Run scripts/start-integrated.ps1}"
+      MQTT_TELEMETRY_PASSWORD: "${MQTT_TELEMETRY_PASSWORD:?Run scripts/start-integrated.ps1}"
+      MQTT_BROKER_PASSWORD: "${MQTT_BROKER_PASSWORD:?Run scripts/start-integrated.ps1}"
+    command: [python, /tools/init-emqx.py]
+    volumes: ['./tools/integrated:/tools:ro']
+    depends_on:
+      emqx: {condition: service_healthy}
+  delivery:
+    image: python:3.13-slim
+    mem_limit: 96m
+    command: [python, /tools/local-delivery-fixture.py]
+    healthcheck:
+      test: [CMD, python, -c, 'import socket; socket.create_connection(("localhost",8091), 2).close()']
+      interval: 5s
+      timeout: 4s
+      retries: 20
+    environment:
+      FIXTURE_ADMIN_TOKEN: "${FIXTURE_ADMIN_TOKEN:?Run scripts/start-integrated.ps1}"
+      NOTIFICATION_SERVICE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+      EVENT_FIXTURE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+    volumes: ['../smartgn-payments-billing/tools:/tools:ro', delivery-data:/data]
+  verify:
+    image: python:3.13-slim
+    profiles: [verify]
+    mem_limit: 128m
+    working_dir: /workspace/smartgn-api-gateway
+    environment:
+      INTERNAL_SERVICE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+      FIXTURE_ADMIN_TOKEN: "${FIXTURE_ADMIN_TOKEN:?Run scripts/start-integrated.ps1}"
+      BOOTSTRAP_SUPERADMIN_PASSWORD: "${BOOTSTRAP_SUPERADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      DEMO_USER_PASSWORD: "${DEMO_USER_PASSWORD:?Run scripts/start-integrated.ps1}"
+      SMARTGN_ADMIN_USERNAME: "smartgn-local"
+      SMARTGN_ADMIN_PASSWORD: "${SMARTGN_ADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
+      SMOKE_CORS_ORIGIN: "${SMOKE_CORS_ORIGIN:-}"
+      PYTHONDONTWRITEBYTECODE: '1'
+    volumes: ['..:/workspace:ro', './.local:/state']
 volumes:
-  billing-data:
-  mqtt-data:
-  billing-integration-data:
-  iam-integration-data:
-  installation-integration-data:
+  postgres-data:
+  influx-data:
+  influx-config:
+  emqx-data:
   delivery-data:
-  support-integration-db:
-  support-integration-photos:
-  device-broker-data:
-  telemetry-fixture-data:
+  support-photos:
