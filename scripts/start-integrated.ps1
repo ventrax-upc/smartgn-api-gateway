@@ -1,4 +1,4 @@
-param([switch]$SkipBuild,[switch]$InfrastructureOnly)
+param([switch]$SkipBuild,[switch]$InfrastructureOnly,[switch]$PrepareOnly)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 Push-Location -LiteralPath $repo
@@ -45,6 +45,7 @@ try {
     $compose = @('compose','--parallel','1','--env-file','.local/integrated.env','-f','compose.integration.yml')
     & docker @compose config --quiet
     if ($LASTEXITCODE -ne 0) { throw 'Invalid integrated Compose configuration.' }
+    if ($PrepareOnly) { return }
     if ($InfrastructureOnly) {
         & docker @compose up -d --wait --wait-timeout 300 postgres redis influxdb emqx delivery
         if ($LASTEXITCODE -ne 0) { throw 'Integrated infrastructure startup failed.' }

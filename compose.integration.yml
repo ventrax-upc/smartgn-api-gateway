@@ -88,6 +88,8 @@ services:
       emqx-init: {condition: service_completed_successfully}
   iam:
     build: ../smartgn-iam
+    healthcheck:
+      start_period: 150s
     ports: ['127.0.0.1:8080:8080']
     mem_limit: 448m
     environment:
@@ -136,6 +138,8 @@ services:
 
   installation:
     build: ../smartgn-installation-device-management
+    healthcheck:
+      start_period: 150s
     ports: ['127.0.0.1:8081:8081']
     mem_limit: 448m
     environment:
@@ -183,6 +187,8 @@ services:
 
   support:
     build: ../smartgn-support-maintenance
+    healthcheck:
+      start_period: 150s
     ports: ['127.0.0.1:8082:8082']
     mem_limit: 448m
     environment:
@@ -233,6 +239,8 @@ services:
     volumes: [support-photos:/data]
   billing:
     build: ../smartgn-payments-billing
+    healthcheck:
+      start_period: 150s
     ports: ['127.0.0.1:8083:8083']
     mem_limit: 448m
     environment:
@@ -268,6 +276,9 @@ services:
       TAX_KEY_PASSWORD: "${TAX_KEY_PASSWORD:?Run scripts/start-integrated.ps1}"
       TAX_KEYSTORE_PATH: "/run/secrets/tax.p12"
       SUNAT_MODE: "local"
+      FISCAL_RUC: "${FISCAL_RUC:-20100066603}"
+      FISCAL_NAME: "${FISCAL_NAME:-SmartGN DEMO}"
+      FISCAL_ADDRESS: "${FISCAL_ADDRESS:-Lima Peru DEMO}"
       MQTT_URL: "tcp://emqx:1883"
       MQTT_USERNAME: "billing-service"
       MQTT_PASSWORD: "${MQTT_BILLING_PASSWORD:?Run scripts/start-integrated.ps1}"
@@ -281,6 +292,8 @@ services:
     volumes: ['./.local/tax.p12:/run/secrets/tax.p12:ro']
   alerting:
     build: ../smartgn-alerting-notifications
+    healthcheck:
+      start_period: 150s
     ports: ['127.0.0.1:8086:8086']
     mem_limit: 448m
     environment:
