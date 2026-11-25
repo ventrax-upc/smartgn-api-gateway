@@ -122,6 +122,7 @@ services:
       DB_PASSWORD: "${DB_IAM_DB:?Run scripts/start-integrated.ps1}"
       DB_USERNAME: "smartgn_iam"
       SPRING_PROFILES_ACTIVE: "local-bootstrap"
+      JWT_EXPIRATION_MINUTES: "${JWT_EXPIRATION_MINUTES:-15}"
       DELIVERY_ENCRYPTION_KEY: "${DELIVERY_ENCRYPTION_KEY:?Run scripts/start-integrated.ps1}"
       BOOTSTRAP_SUPERADMIN_PASSWORD: "${BOOTSTRAP_SUPERADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
       BOOTSTRAP_SUPERADMIN_EMAIL: "admin@smartgn.test"

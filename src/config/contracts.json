@@ -1,5 +1,17 @@
 [
   {
+    "method": "DELETE",
+    "path": "/api/v1/subusers/{subuserId}",
+    "service": "iam",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/subusers/{subuserId}/resend-invitation",
+    "service": "iam",
+    "public": false
+  },
+  {
     "method": "PUT",
     "path": "/api/v1/subusers/{subuserId}/grants",
     "service": "iam",
@@ -44,6 +56,12 @@
   {
     "method": "POST",
     "path": "/api/v1/profiles",
+    "service": "iam",
+    "public": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/renew-session",
     "service": "iam",
     "public": false
   },
