@@ -38,7 +38,7 @@ export function createApp(config) {
     exposedHeaders: ['X-Correlation-Id', 'X-Total-Count', 'Content-Disposition', 'Location', 'Retry-After'],
     maxAge: 600,
   }));
-  const { general, signIn } = createRateLimiters(config);
+  const { general, signIn, checkoutEmail, recoveryEmail } = createRateLimiters(config);
   app.use(general);
   app.get('/health', (_req, res) => res.json({ status: 'UP', service: 'api-gateway' }));
   app.get('/ready', (req, res) => readiness(config, req, res));
@@ -53,6 +53,8 @@ export function createApp(config) {
   });
   // Resource ownership and current session/grant checks remain in the owning service.
   app.post('/api/v1/auth/sign-in', signIn);
+  app.post('/api/v1/installations/email-verifications', checkoutEmail);
+  app.post('/api/v1/auth/recovery-codes', recoveryEmail);
   app.use(createJwtValidator(config));
   app.use(async (req, res, next) => {
     if (!findContract(req.method, req.path) || findContract(req.method, req.path).service !== 'alerting') return next();

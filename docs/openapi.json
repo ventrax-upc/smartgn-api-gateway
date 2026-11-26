@@ -129,85 +129,6 @@
     }
   ],
   "paths": {
-    "/api/v1/subusers/{subuserId}": {
-      "delete": {
-        "tags": [
-          "IAM / Delegated access"
-        ],
-        "summary": "Remove a delegated account",
-        "description": "Requires the owning principal. Disables the delegated account, invalidates pending links and sessions, and revokes meter grants.",
-        "operationId": "iam_removeSubuser",
-        "parameters": [
-          {
-            "name": "subuserId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Delegated account removed"
-          },
-          "401": {
-            "description": "Authentication required"
-          },
-          "403": {
-            "description": "Delegation is not owned by this principal"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "x-upstream-service": "iam"
-      }
-    },
-    "/api/v1/subusers/{subuserId}/resend-invitation": {
-      "post": {
-        "tags": [
-          "IAM / Delegated access"
-        ],
-        "summary": "Resend a pending delegated account invitation",
-        "description": "Requires the owning principal. Invalidates previous activation links and queues a new link valid for 30 minutes.",
-        "operationId": "iam_resendInvitation",
-        "parameters": [
-          {
-            "name": "subuserId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Invitation queued"
-          },
-          "401": {
-            "description": "Authentication required"
-          },
-          "403": {
-            "description": "Delegation is not owned by this principal"
-          },
-          "409": {
-            "description": "Account is not pending activation"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "x-upstream-service": "iam"
-      }
-    },
     "/api/v1/subusers/{subuserId}/grants": {
       "put": {
         "tags": [
@@ -867,6 +788,88 @@
         "x-upstream-service": "iam"
       }
     },
+    "/api/v1/subusers/{subuserId}/resend-invitation": {
+      "post": {
+        "tags": [
+          "IAM / Delegated access"
+        ],
+        "summary": "Resend a pending delegated account invitation",
+        "description": "Requires the owning principal. Invalidates previous activation links and queues a new one valid for 30 minutes.",
+        "operationId": "iam_resendInvitation",
+        "parameters": [
+          {
+            "name": "subuserId",
+            "in": "path",
+            "description": "Resource UUID. Possession of an identifier does not replace authorization.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Operation completed without a response body."
+          },
+          "401": {
+            "description": "Missing, expired, revoked or invalid IAM session."
+          },
+          "403": {
+            "description": "The current account does not have the required role, ownership or meter/function permission."
+          },
+          "409": {
+            "description": "The delegated account is not pending activation."
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "iam"
+      }
+    },
     "/api/v1/profiles": {
       "post": {
         "tags": [
@@ -968,45 +971,6 @@
                 }
               }
             }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "x-upstream-service": "iam"
-      }
-    },
-    "/api/v1/auth/renew-session": {
-      "post": {
-        "tags": [
-          "IAM / Authentication"
-        ],
-        "summary": "Renew an active session",
-        "description": "Renews a valid current bearer session without credentials. Expired, revoked, or twelve-hour-old sessions require sign-in.",
-        "operationId": "iam_renewSession",
-        "responses": {
-          "200": {
-            "description": "Session renewed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "token"
-                  ],
-                  "properties": {
-                    "token": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing, expired or revoked session"
           }
         },
         "security": [
@@ -1135,6 +1099,271 @@
           },
           "400": {
             "description": "Invalid data, or token invalid, expired or already used"
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "x-upstream-service": "iam"
+      }
+    },
+    "/api/v1/auth/renew-session": {
+      "post": {
+        "tags": [
+          "IAM / Authentication"
+        ],
+        "summary": "Renew an active session",
+        "description": "Renews a valid current bearer session without credentials. Expired, revoked, or twelve-hour-old sessions require sign-in.",
+        "operationId": "iam_renewSession",
+        "responses": {
+          "200": {
+            "description": "Operation completed successfully.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/iam_RenewedSession"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired, revoked or invalid IAM session."
+          },
+          "403": {
+            "description": "The current account does not have the required role, ownership or meter/function permission."
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "iam"
+      }
+    },
+    "/api/v1/auth/recovery-codes": {
+      "post": {
+        "tags": [
+          "IAM / Authentication"
+        ],
+        "summary": "Request a password recovery code",
+        "description": "Queues an email with a six-digit code for a registered active account. Returns only a challenge identifier.",
+        "operationId": "iam_send",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/iam_Send"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Request accepted; asynchronous work or delivery may still be pending.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/iam_Challenge"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Email is invalid",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/iam_Challenge"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Email is not registered",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/iam_Challenge"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Account is inactive",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/iam_Challenge"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Recovery request limit exceeded",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/iam_Challenge"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Email delivery is unavailable",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/iam_Challenge"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "x-upstream-service": "iam"
+      }
+    },
+    "/api/v1/auth/recovery-codes/verify": {
+      "post": {
+        "tags": [
+          "IAM / Authentication"
+        ],
+        "summary": "Verify a password recovery code",
+        "description": "Checks an expiring code and issues a one-time password reset token.",
+        "operationId": "iam_verify",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/iam_Verify"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed successfully."
+          },
+          "400": {
+            "description": "Challenge or code is invalid",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/iam_RecoveryProof"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Code is incorrect or expired",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/iam_RecoveryProof"
+                }
+              }
+            }
           },
           "429": {
             "description": "Gateway request limit exceeded.",
@@ -1531,6 +1760,85 @@
           },
           {
             "name": "meterId",
+            "in": "path",
+            "description": "Resource UUID. Possession of an identifier does not replace authorization.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Operation completed without a response body."
+          },
+          "401": {
+            "description": "Missing, expired, revoked or invalid IAM session."
+          },
+          "403": {
+            "description": "The current account does not have the required role, ownership or meter/function permission."
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "iam"
+      }
+    },
+    "/api/v1/subusers/{subuserId}": {
+      "delete": {
+        "tags": [
+          "IAM / Delegated access"
+        ],
+        "summary": "Remove a delegated account",
+        "description": "Requires the owning principal. Disables the delegated account, invalidates pending links and sessions, and revokes meter grants.",
+        "operationId": "iam_removeSubuser",
+        "parameters": [
+          {
+            "name": "subuserId",
             "in": "path",
             "description": "Resource UUID. Possession of an identifier does not replace authorization.",
             "required": true,
@@ -3251,7 +3559,10 @@
             }
           },
           "400": {
-            "description": "Required installation contact or address is missing or invalid."
+            "description": "Required request fields are missing or invalid."
+          },
+          "403": {
+            "description": "A valid email verification is required."
           },
           "429": {
             "description": "Gateway request limit exceeded.",
@@ -5120,6 +5431,229 @@
             "bearerAuth": []
           }
         ],
+        "x-upstream-service": "installation"
+      }
+    },
+    "/api/v1/installations/verified": {
+      "post": {
+        "tags": [
+          "Installation & Device Management / Installation requests"
+        ],
+        "summary": "Create a verified installation request",
+        "description": "Creates one provisional request for the verified email. Replaying the proof returns the same request.",
+        "operationId": "installation_createVerified",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/installation_VerifiedCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Resource created.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/installation_CreatedRequest"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Required request fields are missing or invalid."
+          },
+          "403": {
+            "description": "A valid email verification is required."
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "x-upstream-service": "installation"
+      }
+    },
+    "/api/v1/installations/email-verifications": {
+      "post": {
+        "tags": [
+          "Installation & Device Management / Installation requests"
+        ],
+        "summary": "Send a checkout verification code",
+        "description": "Delivers a six-digit code and returns only a challenge identifier.",
+        "operationId": "installation_send",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/installation_Send"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Request accepted; asynchronous work or delivery may still be pending.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/installation_Challenge"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Required request fields are missing or invalid."
+          },
+          "429": {
+            "description": "Verification code request limit exceeded."
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Email delivery unavailable."
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "x-upstream-service": "installation"
+      }
+    },
+    "/api/v1/installations/email-verifications/confirm": {
+      "post": {
+        "tags": [
+          "Installation & Device Management / Installation requests"
+        ],
+        "summary": "Verify a checkout email",
+        "description": "Validates the code and returns a short-lived proof bound to the verified email.",
+        "operationId": "installation_confirm_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/installation_Confirm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed successfully.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/installation_Proof"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Required request fields are missing or invalid."
+          },
+          "422": {
+            "description": "Invalid or expired verification code."
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
         "x-upstream-service": "installation"
       }
     },
@@ -8159,7 +8693,7 @@
           "Payments & Billing / Checkout"
         ],
         "summary": "Create checkout session instructions",
-        "description": "Requires the private checkout secret. Local instructions are an explicit test adapter, not a productive Niubiz hosted checkout. Authentication: no user JWT required; the operation-specific token or checkout secret still applies when specified.",
+        "description": "Requires the private checkout secret. In local mode, returns either simulated checkout instructions or a Niubiz Sandbox session when enabled.",
         "operationId": "billing_session",
         "parameters": [
           {
@@ -9047,6 +9581,104 @@
             "bearerAuth": []
           }
         ],
+        "x-upstream-service": "billing"
+      }
+    },
+    "/api/v1/checkout/orders/{id}/sandbox-authorizations": {
+      "post": {
+        "tags": [
+          "Payments & Billing / Checkout"
+        ],
+        "summary": "Authorize a local test checkout",
+        "description": "Requires the private checkout secret. Billing verifies the Niubiz Sandbox token or processes the explicitly enabled local simulator action against the stored order.",
+        "operationId": "billing_authorize",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Resource UUID. Possession of an identifier does not replace authorization.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Checkout-Secret",
+            "in": "header",
+            "description": "Private caller-generated checkout secret. Keep it confidential; an order UUID alone does not authorize access.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/billing_Authorization"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed successfully.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Checkout inputs or required headers are missing or invalid."
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
         "x-upstream-service": "billing"
       }
     },
@@ -11153,43 +11785,6 @@
           }
         }
       },
-      "iam_DelegatedAccount": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/iam_Account"
-          },
-          {
-            "type": "object",
-            "required": [
-              "grants"
-            ],
-            "properties": {
-              "grants": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "required": [
-                    "meterId",
-                    "permissions"
-                  ],
-                  "properties": {
-                    "meterId": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "permissions": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        ]
-      },
       "iam_Account": {
         "type": "object",
         "properties": {
@@ -11347,6 +11942,63 @@
           "token"
         ]
       },
+      "iam_RenewedSession": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        }
+      },
+      "iam_Send": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "iam_Challenge": {
+        "type": "object",
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "iam_Verify": {
+        "type": "object",
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "[0-9]{6}"
+          }
+        },
+        "required": [
+          "challengeId",
+          "code"
+        ]
+      },
+      "iam_RecoveryProof": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        }
+      },
       "iam_ForgotPasswordResource": {
         "type": "object",
         "properties": {
@@ -11405,6 +12057,57 @@
           "activationToken",
           "newPassword"
         ]
+      },
+      "iam_DelegatedAccount": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "accountKind": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "sessionVersion": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "principalAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/iam_MeterGrant"
+            }
+          }
+        }
+      },
+      "iam_MeterGrant": {
+        "type": "object",
+        "properties": {
+          "meterId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        }
       },
       "installation_PointUpdate": {
         "type": "object",
@@ -12152,6 +12855,96 @@
           }
         }
       },
+      "installation_VerifiedCreate": {
+        "type": "object",
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "proof": {
+            "type": "string",
+            "maxLength": 72,
+            "minLength": 72
+          },
+          "contact": {
+            "$ref": "#/components/schemas/installation_Contact"
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "address",
+          "challengeId",
+          "contact",
+          "proof"
+        ]
+      },
+      "installation_CreatedRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "installation_Send": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "installation_Challenge": {
+        "type": "object",
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "installation_Confirm": {
+        "type": "object",
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "[0-9]{6}"
+          }
+        },
+        "required": [
+          "challengeId",
+          "code"
+        ]
+      },
+      "installation_Proof": {
+        "type": "object",
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "proof": {
+            "type": "string"
+          }
+        }
+      },
       "support_UpdateTechnicianRequest": {
         "type": "object",
         "properties": {
@@ -12717,6 +13510,19 @@
             "type": "boolean"
           }
         }
+      },
+      "billing_Authorization": {
+        "type": "object",
+        "properties": {
+          "transactionToken": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "[A-Za-z0-9_-]{16,200}"
+          }
+        },
+        "required": [
+          "transactionToken"
+        ]
       },
       "alerting_UpdateAlertRuleResource": {
         "type": "object",

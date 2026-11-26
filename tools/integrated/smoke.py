@@ -35,10 +35,16 @@ PUBLIC_REJECTIONS = {
     ("POST", "/api/v1/auth/sign-in"): (400,),
     ("POST", "/api/v1/auth/reset-password"): (400,),
     ("POST", "/api/v1/auth/forgot-password"): (400,),
+    ("POST", "/api/v1/auth/recovery-codes"): (400,),
+    ("POST", "/api/v1/auth/recovery-codes/verify"): (400,),
     ("POST", "/api/v1/auth/activate-password"): (400,),
     ("POST", "/api/v1/installations"): (400,),
+    ("POST", "/api/v1/installations/email-verifications"): (400,),
+    ("POST", "/api/v1/installations/email-verifications/confirm"): (400,),
+    ("POST", "/api/v1/installations/verified"): (400,),
     ("POST", "/api/v1/checkout/orders"): (400,),
     ("POST", "/api/v1/checkout/orders/{id}/sessions"): (400,),
+    ("POST", "/api/v1/checkout/orders/{id}/sandbox-authorizations"): (400,),
     ("GET", "/api/v1/checkout/orders/{id}"): (400,),
 }
 
@@ -294,8 +300,11 @@ def main():
     for path in ("/api/v1/alerts", "/api/v1/notifications", "/api/v1/analytics/live"):
         call("GET", path, expected=(401,))
         print(f"PASS unauthenticated {path} rejected", flush=True)
-    state = json.loads(Path("/state/seed-state.json").read_text())
-    point = state["demo-supply-point-primary"]
+    state_file = Path("/state/seed-state.json")
+    state = json.loads(state_file.read_text()) if state_file.exists() else {}
+    point = state.get("demo-supply-point-primary")
+    if not point:
+        raise RuntimeError("Demo meter missing from the seed checkpoint. Run scripts/seed-local.ps1 on this Compose project before the smoke.")
     password = os.environ["DEMO_USER_PASSWORD"]
     owner, _ = login(records["demo-account-pro"]["email"], password)
     other, _ = login(records["demo-account-other"]["email"], password)

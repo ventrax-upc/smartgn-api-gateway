@@ -96,7 +96,12 @@ def account(record, state, amount):
         "installationId": installation, "email": email, "firstName": record["firstName"],
         "lastName": record["lastName"],
     }, {"Idempotency-Key": stable(alias + "/purchase"), "X-Checkout-Secret": stable(alias + "/secret")},
-        expected=(201,))
+        expected=(201, 409))
+    if not order or "id" not in order:
+        raise RuntimeError(
+            f"Checkout for fixture {alias} conflicts with existing local data. "
+            "Check that the seed checkpoint belongs to the current Compose database."
+        )
     reference = "demo-" + stable(alias + "/provider")
     call("POST", "/internal/v1/local-provider/results", {
         "reference": reference, "orderId": order["id"], "status": "CONFIRMED", "amount": amount,
@@ -118,7 +123,7 @@ def account(record, state, amount):
     return (*login(email, password), installation)
 
 
-def setup_meter(records, state, admin, owner, installation):
+def setup_meter(records, state, admin, owner, installation, device_serial="SMARTGN-DEMO-METER"):
     prop_fixture = records["demo-property-primary"]
     point_fixture = records["demo-supply-point-primary"]
     meter = records["demo-meter-primary"]
@@ -162,7 +167,7 @@ def setup_meter(records, state, admin, owner, installation):
             call("PATCH", path + "/status", {"status": "IN_PROGRESS"}, admin)
         checkpoint(state, meter["alias"], lambda: call("POST", "/api/v1/devices", {
             "deviceId": device_id, "installationId": installation, "supplyPointId": point,
-            "installerId": installer, "serialNumber": "SMARTGN-DEMO-METER", "location": "Kitchen",
+            "installerId": installer, "serialNumber": device_serial, "location": "Kitchen",
             "installedAt": (now() - timedelta(days=3)).isoformat(),
         }, admin, expected=(202,)))
     if current()["status"] == "COMPLETED":

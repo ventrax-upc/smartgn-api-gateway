@@ -49,7 +49,7 @@ async function setup(t, environment = {}) {
 
 test('every public service operation has an exact route and reaches the owning proxy', async (t) => {
   const { url, seen } = await setup(t);
-  assert.equal(CONTRACTS.length, 108);
+  assert.equal(CONTRACTS.length, 117);
   assert.ok(CONTRACTS.filter((contract) => ['alerting', 'monitoring'].includes(contract.service))
     .every((contract) => !contract.public));
   for (const contract of CONTRACTS) {
@@ -177,7 +177,7 @@ test('OpenAPI exposes only public contracts and reports readiness separately fro
   assert.equal(api.info.title, 'SmartGN - API Gateway');
   assert.equal(api.info.version, 'v1');
   assert.ok(!Object.keys(api.paths).some((path) => path.startsWith('/internal')));
-  assert.equal(Object.values(api.paths).reduce((n, item) => n + Object.keys(item).length, 0), 110);
+  assert.equal(Object.values(api.paths).reduce((n, item) => n + Object.keys(item).length, 0), CONTRACTS.length + 2);
   assert.equal((await fetch(url + '/ready')).status, 200);
   assert.equal((await fetch(url + '/swagger-ui/index.html')).status, 200);
   assert.match(await (await fetch(url + '/swagger-ui/swagger-initializer.js')).text(), /persistAuthorization:false/);

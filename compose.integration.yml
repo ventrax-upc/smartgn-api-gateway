@@ -126,7 +126,12 @@ services:
       DELIVERY_ENCRYPTION_KEY: "${DELIVERY_ENCRYPTION_KEY:?Run scripts/start-integrated.ps1}"
       BOOTSTRAP_SUPERADMIN_PASSWORD: "${BOOTSTRAP_SUPERADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
       BOOTSTRAP_SUPERADMIN_EMAIL: "admin@smartgn.test"
+      ACTIVATION_LINK_BASE_URL: "${ACTIVATION_LINK_BASE_URL:-http://localhost:4200/activate-password}"
+      PASSWORD_RESET_LINK_BASE_URL: "${PASSWORD_RESET_LINK_BASE_URL:-http://localhost:4200/reset-password}"
       NOTIFICATION_DELIVERY_URL: "http://delivery:8091/local-contracts/notifications"
+      IAM_EMAIL_MODE: "${IAM_EMAIL_MODE:-fixture}"
+      RESEND_API_KEY: "${RESEND_API_KEY:-}"
+      RESEND_FROM_EMAIL: "${RESEND_FROM_EMAIL:-${APP_PASSWORD_RESET_FROM_EMAIL:-}}"
       NOTIFICATION_SERVICE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
       IDENTITY_EVENT_SINK_URL: "http://delivery:8091/local-contracts/events"
       IDENTITY_EVENT_SINK_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
@@ -180,6 +185,10 @@ services:
       TELEMETRY_BASE_URL: "http://telemetry:8085"
       SMARTGN_IAM_BASE_URL: "http://iam:8080"
       SMARTGN_EVENTS_SINK_URL: "http://billing:8083/internal/v1/events"
+      CHECKOUT_EMAIL_MODE: "${CHECKOUT_EMAIL_MODE:-local}"
+      CHECKOUT_EMAIL_FIXTURE_URL: "http://delivery:8091/local-contracts/notifications"
+      RESEND_API_KEY: "${RESEND_API_KEY:-}"
+      RESEND_FROM_EMAIL: "${RESEND_FROM_EMAIL:-${APP_PASSWORD_RESET_FROM_EMAIL:-}}"
       SMARTGN_EVENTS_SINK_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
     depends_on:
       config: {condition: service_healthy}
@@ -274,6 +283,11 @@ services:
       DB_PASSWORD: "${DB_BILLING_DB:?Run scripts/start-integrated.ps1}"
       SPRING_PROFILES_ACTIVE: "local"
       CARD_ENCRYPTION_KEY: "${CARD_ENCRYPTION_KEY:?Run scripts/start-integrated.ps1}"
+      LOCAL_BROWSER_CHECKOUT_ENABLED: "true"
+      NIUBIZ_SANDBOX_ENABLED: "${NIUBIZ_SANDBOX_ENABLED:-false}"
+      NIUBIZ_SANDBOX_MERCHANT: "${NIUBIZ_SANDBOX_MERCHANT:-}"
+      NIUBIZ_SANDBOX_USER: "${NIUBIZ_SANDBOX_USER:-}"
+      NIUBIZ_SANDBOX_PASSWORD: "${NIUBIZ_SANDBOX_PASSWORD:-}"
       TAX_KEY_PASSWORD: "${TAX_KEY_PASSWORD:?Run scripts/start-integrated.ps1}"
       TAX_KEYSTORE_PATH: "/run/secrets/tax.p12"
       SUNAT_MODE: "local"
@@ -352,6 +366,10 @@ services:
       PORT: "8085"
       GRPC_PORT: "9084"
       MQTT_URL: "tcp://emqx:1883"
+      MQTT_CLIENT_ID: "${TELEMETRY_MQTT_CLIENT_ID:-smartgn-telemetry}"
+      MQTT_TOPIC: "${TELEMETRY_MQTT_TOPIC:-smartgn/devices/+/telemetry}"
+      TELEMETRY_DB: "Host=telemetry-postgres;Database=smartgn_telemetry;Username=smartgn_telemetry;Password=${DB_TELEMETRY:?Run scripts/start-integrated.ps1};Maximum Pool Size=32;Timeout=3;Command Timeout=5"
+      TELEMETRY_PENDING_CAPACITY: "${TELEMETRY_PENDING_CAPACITY:-4000000}"
       MQTT_USERNAME: "telemetry-service"
       MQTT_PASSWORD: "${MQTT_TELEMETRY_PASSWORD:?Run scripts/start-integrated.ps1}"
       INFLUX_URL: "http://influxdb:8086"
@@ -363,6 +381,7 @@ services:
       config: {condition: service_healthy}
       influxdb: {condition: service_healthy}
       emqx-init: {condition: service_completed_successfully}
+      telemetry-postgres: {condition: service_healthy}
 
   monitoring:
     build: ../smartgn-monitoring-analytics
@@ -415,7 +434,7 @@ services:
       BILLING_URL: "http://billing:8083"
       MONITORING_URL: "http://monitoring:8084"
       ALERTING_URL: "http://alerting:8086"
-      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:5173}"
+      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:5173,http://localhost:4200,http://localhost:5500,http://127.0.0.1:5500,https://ventrax-upc.github.io}"
     depends_on:
       config: {condition: service_healthy}
       iam: {condition: service_healthy}
@@ -453,6 +472,22 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+  telemetry-postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: smartgn_telemetry
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "${DB_TELEMETRY_ADMIN:?Run scripts/start-integrated.ps1}"
+      DB_TELEMETRY: "${DB_TELEMETRY:?Run scripts/start-integrated.ps1}"
+    volumes:
+      - telemetry-postgres-data:/var/lib/postgresql
+      - ./tools/integrated/init-telemetry-postgres.sql:/docker-entrypoint-initdb.d/01-telemetry.sql:ro
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U postgres']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
   influxdb:
     image: influxdb:2.7
     mem_limit: 512m
@@ -533,6 +568,7 @@ services:
       PYTHONDONTWRITEBYTECODE: '1'
     volumes: ['..:/workspace:ro', './.local:/state']
 volumes:
+  telemetry-postgres-data:
   postgres-data:
   influx-data:
   influx-config:

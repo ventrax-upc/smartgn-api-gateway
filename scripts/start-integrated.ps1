@@ -47,7 +47,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Invalid integrated Compose configuration.' }
     if ($PrepareOnly) { return }
     if ($InfrastructureOnly) {
-        & docker @compose up -d --wait --wait-timeout 300 postgres redis influxdb emqx delivery
+        & docker @compose up -d --wait --wait-timeout 300 postgres telemetry-postgres redis influxdb emqx delivery
         if ($LASTEXITCODE -ne 0) { throw 'Integrated infrastructure startup failed.' }
         & docker @compose up --no-deps --exit-code-from emqx-init emqx-init
         if ($LASTEXITCODE -ne 0) { throw 'EMQX initialization failed.' }

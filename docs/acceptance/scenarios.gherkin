@@ -1,0 +1,22 @@
+# Source: Ventrax AV4 report. Acceptance specification; execution is verified separately.
+Feature: API routing and perimeter security
+
+  Scenario: Route an authorized request to a backend service
+    Given an authenticated client provides a valid JWT
+    When the client requests a configured protected route
+    Then the Gateway forwards the request to the corresponding local backend service
+
+  Scenario: Reject an invalid or expired JWT
+    Given a client provides an invalid or expired access token
+    When the client requests a protected route
+    Then the Gateway rejects the request with the appropriate authentication error
+
+  Scenario: Preserve resource-level authorization
+    Given a subuser has a valid JWT but lacks permission for meter B
+    When the subuser requests a protected operation for meter B
+    Then the backend denies the operation according to its current resource permissions
+
+  Scenario: Handle an unavailable backend
+    Given a configured backend service is unavailable
+    When the Gateway attempts to route a request to that service
+    Then the Gateway returns a controlled error without exposing internal credentials
