@@ -19,6 +19,8 @@ export function createRateLimiters({ rateLimit: cfg }) {
 
   // Stricter limit against credential stuffing / brute force.
   const signIn = rateLimit({ ...common, limit: cfg.signInMax });
+  const checkoutEmail = rateLimit({ ...common, limit: cfg.signInMax });
+  const recoveryEmail = rateLimit({ ...common, limit: cfg.signInMax });
 
-  return { general, signIn };
+  return { general, signIn, checkoutEmail, recoveryEmail };
 }
