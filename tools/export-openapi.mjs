@@ -7,7 +7,7 @@ const owners = {
   iam: ['smartgn-iam', 'IAM'],
   installation: ['smartgn-installation-device-management', 'Installation & Device Management'],
   support: ['smartgn-support-maintenance', 'Support & Maintenance'],
-  billing: ['smartgn-payments-billing', 'Payments & Billing'],
+  payments: ['smartgn-payments-billing', 'Payments & Billing'],
   alerting: ['smartgn-alerting-notifications', 'Alerting & Notifications'],
   monitoring: ['smartgn-monitoring-analytics', 'Monitoring & Analytics'],
 };

@@ -10,6 +10,9 @@ try {
             if ($line -match '^([A-Z_]+)=(.*)$') { $settings[$Matches[1]] = $Matches[2] }
         }
     }
+    if (-not $settings.MQTT_PAYMENTS_PASSWORD -and $settings.MQTT_BILLING_PASSWORD) {
+        $settings.MQTT_PAYMENTS_PASSWORD = $settings.MQTT_BILLING_PASSWORD
+    }
     $template = Get-Content compose.integration.yml -Raw
     $required = [regex]::Matches($template, '\$\{([A-Z_]+):\?') |
         ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique
@@ -54,14 +57,14 @@ try {
         return
     }
     if (-not $SkipBuild) {
-        $services = @('config','admin','iam','installation','support','billing','alerting',
-            'message-broker','telemetry','monitoring','api-gateway')
+        $services = @('config','admin','iam','installation','support','payments','alerting',
+            'message-broker','telemetry','monitoring','api-gateway','frontend')
         foreach ($service in $services) {
             & docker @compose build $service
             if ($LASTEXITCODE -ne 0) { throw "Docker build failed for $service." }
         }
     }
-    & docker @compose up -d --wait --wait-timeout 300 admin api-gateway message-broker telemetry delivery
+    & docker @compose up -d --no-build --wait --wait-timeout 300 admin frontend message-broker telemetry delivery
     if ($LASTEXITCODE -ne 0) { throw 'Integrated startup failed. Inspect Compose ps and logs.' }
 } finally {
     Pop-Location

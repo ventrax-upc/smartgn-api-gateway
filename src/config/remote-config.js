@@ -4,7 +4,7 @@ const settingNames = {
   'smartgn.gateway.iam-url': 'IAM_URL',
   'smartgn.gateway.installation-url': 'INSTALLATION_URL',
   'smartgn.gateway.support-url': 'SUPPORT_URL',
-  'smartgn.gateway.billing-url': 'BILLING_URL',
+  'smartgn.gateway.payments-url': 'PAYMENTS_URL',
   'smartgn.gateway.monitoring-url': 'MONITORING_URL',
   'smartgn.gateway.alerting-url': 'ALERTING_URL',
 };

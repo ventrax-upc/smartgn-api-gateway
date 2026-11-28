@@ -7,7 +7,7 @@ The Gateway public contract is available at `/v3/api-docs` and in `openapi.json`
 | IAM | auth, profiles, subusers |
 | Installation | properties, supply-points, installers, installations, devices, meters, operations/outbox |
 | Support | support |
-| Billing | checkout, payment-methods, subscriptions, payments, billing-documents, technical-statements |
+| Payments | checkout, payment-methods, subscriptions, payments, billing-documents, technical-statements |
 | Alerting | alerts, alert-rules, notifications, notification-preferences |
 | Monitoring | analytics |
 

@@ -100,7 +100,7 @@ def main():
     assert completed['status']=='COMPLETED'
     assert call('POST',path+'/complete',{},admin)['completedAt']==completed['completedAt']
     eventually(lambda: call('GET','/api/v1/subscriptions/me',headers=owner).get('plan')=='FREE')
-    check('Recent-contact fixture permits idempotent completion and real Billing receives InstallationCompleted')
+    check('Recent-contact fixture permits idempotent completion and real Payments receives InstallationCompleted')
     rotated = call('POST','/api/v1/devices/'+device+'/credentials/rotate',{},admin,expected=202)
     eventually(lambda: (value if (value:=current_device()) and value['status']=='ACTIVE' else None))
     rejected = Mqtt5('localhost',1886,receipt['mqttUsername'],receipt['oneTimeCredential'])

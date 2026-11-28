@@ -7,7 +7,7 @@ export const ROUTE_TABLE = {
     `${API}/installations`, `${API}/devices`, `${API}/meters`, `${API}/operations/outbox`,
   ],
   support: [`${API}/support`],
-  billing: [
+  payments: [
     `${API}/checkout`, `${API}/payment-methods`, `${API}/subscriptions`,
     `${API}/billing-documents`, `${API}/payments`, `${API}/technical-statements`,
   ],

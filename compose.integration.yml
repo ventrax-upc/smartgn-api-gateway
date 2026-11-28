@@ -126,8 +126,8 @@ services:
       DELIVERY_ENCRYPTION_KEY: "${DELIVERY_ENCRYPTION_KEY:?Run scripts/start-integrated.ps1}"
       BOOTSTRAP_SUPERADMIN_PASSWORD: "${BOOTSTRAP_SUPERADMIN_PASSWORD:?Run scripts/start-integrated.ps1}"
       BOOTSTRAP_SUPERADMIN_EMAIL: "admin@smartgn.test"
-      ACTIVATION_LINK_BASE_URL: "${ACTIVATION_LINK_BASE_URL:-http://localhost:4200/activate-password}"
-      PASSWORD_RESET_LINK_BASE_URL: "${PASSWORD_RESET_LINK_BASE_URL:-http://localhost:4200/reset-password}"
+      ACTIVATION_LINK_BASE_URL: "${ACTIVATION_LINK_BASE_URL:-${SMARTGN_PUBLIC_ORIGIN:-http://localhost:${SMARTGN_FRONTEND_PORT:-4200}}/activate-password}"
+      PASSWORD_RESET_LINK_BASE_URL: "${PASSWORD_RESET_LINK_BASE_URL:-${SMARTGN_PUBLIC_ORIGIN:-http://localhost:${SMARTGN_FRONTEND_PORT:-4200}}/reset-password}"
       NOTIFICATION_DELIVERY_URL: "http://delivery:8091/local-contracts/notifications"
       IAM_EMAIL_MODE: "${IAM_EMAIL_MODE:-fixture}"
       RESEND_API_KEY: "${RESEND_API_KEY:-}"
@@ -136,8 +136,8 @@ services:
       IDENTITY_EVENT_SINK_URL: "http://delivery:8091/local-contracts/events"
       IDENTITY_EVENT_SINK_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
       INSTALLATION_BASE_URL: "http://installation:8081"
-      SMARTGN_BILLING_BASE_URL: "http://billing:8083"
-      SMARTGN_BILLING_SERVICE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
+      SMARTGN_PAYMENTS_BASE_URL: "http://payments:8083"
+      SMARTGN_PAYMENTS_SERVICE_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
     depends_on:
       config: {condition: service_healthy}
       postgres: {condition: service_healthy}
@@ -184,7 +184,7 @@ services:
       EMQX_PASSWORD: "${MQTT_PASSWORD:?Run scripts/start-integrated.ps1}"
       TELEMETRY_BASE_URL: "http://telemetry:8085"
       SMARTGN_IAM_BASE_URL: "http://iam:8080"
-      SMARTGN_EVENTS_SINK_URL: "http://billing:8083/internal/v1/events"
+      SMARTGN_EVENTS_SINK_URL: "http://payments:8083/internal/v1/events"
       CHECKOUT_EMAIL_MODE: "${CHECKOUT_EMAIL_MODE:-local}"
       CHECKOUT_EMAIL_FIXTURE_URL: "http://delivery:8091/local-contracts/notifications"
       RESEND_API_KEY: "${RESEND_API_KEY:-}"
@@ -231,11 +231,11 @@ services:
       DB_PASSWORD: "${DB_SMARTGN_SUPPORT_DB:?Run scripts/start-integrated.ps1}"
       IAM_BASE_URL: "http://iam:8080"
       INSTALLATION_BASE_URL: "http://installation:8081"
-      BILLING_BASE_URL: "http://billing:8083"
+      PAYMENTS_BASE_URL: "http://payments:8083"
       PHOTO_PATH: "/data/photos"
       SMARTGN_IAM_URL: "http://iam:8080"
       SMARTGN_INSTALLATION_URL: "http://installation:8081"
-      SMARTGN_BILLING_URL: "http://billing:8083"
+      SMARTGN_PAYMENTS_URL: "http://payments:8083"
       SMARTGN_INTERNAL_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
       SMARTGN_PHOTO_PATH: "/data/photos"
       SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
@@ -247,7 +247,7 @@ services:
       postgres: {condition: service_healthy}
       emqx-init: {condition: service_completed_successfully}
     volumes: [support-photos:/data]
-  billing:
+  payments:
     build: ../smartgn-payments-billing
     healthcheck:
       start_period: 150s
@@ -256,12 +256,12 @@ services:
     environment:
       SPRING_APPLICATION_NAME: "smartgn-payments-billing"
       SPRING_CLOUD_CONFIG_NAME: "smartgn-payments-billing"
-      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_SERVICE_URL: "http://billing:8083"
-      ADMIN_SERVICE_URL: "http://billing:8083"
-      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_MANAGEMENT_URL: "http://billing:8083/actuator"
-      ADMIN_MANAGEMENT_URL: "http://billing:8083/actuator"
-      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_HEALTH_URL: "http://billing:8083/actuator/health"
-      ADMIN_HEALTH_URL: "http://billing:8083/actuator/health"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_SERVICE_URL: "http://payments:8083"
+      ADMIN_SERVICE_URL: "http://payments:8083"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_MANAGEMENT_URL: "http://payments:8083/actuator"
+      ADMIN_MANAGEMENT_URL: "http://payments:8083/actuator"
+      SPRING_BOOT_ADMIN_CLIENT_INSTANCE_HEALTH_URL: "http://payments:8083/actuator/health"
+      ADMIN_HEALTH_URL: "http://payments:8083/actuator/health"
       SMARTGN_CONFIG_URL: "http://config:8088"
       SMARTGN_CONFIG_PROFILE: "local"
       SMARTGN_CONFIG_REQUIRED: "true"
@@ -295,8 +295,8 @@ services:
       FISCAL_NAME: "${FISCAL_NAME:-SmartGN DEMO}"
       FISCAL_ADDRESS: "${FISCAL_ADDRESS:-Lima Peru DEMO}"
       MQTT_URL: "tcp://emqx:1883"
-      MQTT_USERNAME: "billing-service"
-      MQTT_PASSWORD: "${MQTT_BILLING_PASSWORD:?Run scripts/start-integrated.ps1}"
+      MQTT_USERNAME: "payments-service"
+      MQTT_PASSWORD: "${MQTT_PAYMENTS_PASSWORD:?Run scripts/start-integrated.ps1}"
       SUPPORT_BASE_URL: "http://support:8082"
       IAM_BASE_URL: "http://iam:8080"
       INSTALLATION_BASE_URL: "http://installation:8081"
@@ -342,7 +342,9 @@ services:
       DB_PASSWORD: "${DB_SMARTGN_ALERTING_DB:?Run scripts/start-integrated.ps1}"
       DB_USERNAME: "smartgn_alerting"
       SECURITY_ENABLED: "true"
-      NOTIFICATIONS_MODE: "simulated"
+      NOTIFICATIONS_MODE: "${NOTIFICATIONS_MODE:-simulated}"
+      RESEND_API_KEY: "${RESEND_API_KEY:-}"
+      RESEND_FROM_EMAIL: "${RESEND_FROM_EMAIL:-}"
       SMARTGN_GATEWAY_TOKEN: "${INTERNAL_SERVICE_TOKEN:?Run scripts/start-integrated.ps1}"
     depends_on:
       config: {condition: service_healthy}
@@ -403,7 +405,7 @@ services:
       ConnectionStrings__RedisConnection: "redis:6379"
       IAM_BASE_URL: "http://iam:8080"
       TELEMETRY_GRPC_URL: "http://telemetry:9084"
-      BILLING_GRPC_URL: "http://billing:9083"
+      PAYMENTS_GRPC_URL: "http://payments:9083"
     depends_on:
       config: {condition: service_healthy}
       postgres: {condition: service_healthy}
@@ -431,20 +433,31 @@ services:
       IAM_URL: "http://iam:8080"
       INSTALLATION_URL: "http://installation:8081"
       SUPPORT_URL: "http://support:8082"
-      BILLING_URL: "http://billing:8083"
+      PAYMENTS_URL: "http://payments:8083"
       MONITORING_URL: "http://monitoring:8084"
       ALERTING_URL: "http://alerting:8086"
-      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:5173,http://localhost:4200,http://localhost:5500,http://127.0.0.1:5500,https://ventrax-upc.github.io}"
+      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:5173,http://localhost:${SMARTGN_FRONTEND_PORT:-4200},http://127.0.0.1:${SMARTGN_FRONTEND_PORT:-4200},http://localhost:5500,http://127.0.0.1:5500,https://ventrax-upc.github.io}"
     depends_on:
       config: {condition: service_healthy}
       iam: {condition: service_healthy}
       installation: {condition: service_healthy}
       support: {condition: service_healthy}
-      billing: {condition: service_healthy}
+      payments: {condition: service_healthy}
       monitoring: {condition: service_healthy}
       alerting: {condition: service_healthy}
     init: true
     ports: ['127.0.0.1:8000:8000']
+  frontend:
+    build: ${SMARTGN_FRONTEND_CONTEXT:-../../smartgn-frontend}
+    image: ${SMARTGN_FRONTEND_IMAGE:-smartgn-frontend:local}
+    environment:
+      SMARTGN_GATEWAY_UPSTREAM: "${SMARTGN_GATEWAY_UPSTREAM:-api-gateway:8000}"
+      SMARTGN_GATEWAY_SCHEME: "${SMARTGN_GATEWAY_SCHEME:-http}"
+      SMARTGN_DNS_RESOLVER: "${SMARTGN_DNS_RESOLVER:-127.0.0.11}"
+    ports: ['${SMARTGN_FRONTEND_BIND:-127.0.0.1}:${SMARTGN_FRONTEND_PORT:-4200}:80']
+    depends_on:
+      api-gateway: {condition: service_healthy}
+
   postgres:
     image: postgres:18
     mem_limit: 448m
@@ -531,7 +544,7 @@ services:
       DEVICE_BROKER_API_KEY: "${DEVICE_BROKER_API_KEY:?Run scripts/start-integrated.ps1}"
       DEVICE_BROKER_API_SECRET: "${DEVICE_BROKER_API_SECRET:?Run scripts/start-integrated.ps1}"
       MQTT_SUPPORT_PASSWORD: "${MQTT_SUPPORT_PASSWORD:?Run scripts/start-integrated.ps1}"
-      MQTT_BILLING_PASSWORD: "${MQTT_BILLING_PASSWORD:?Run scripts/start-integrated.ps1}"
+      MQTT_PAYMENTS_PASSWORD: "${MQTT_PAYMENTS_PASSWORD:?Run scripts/start-integrated.ps1}"
       MQTT_TELEMETRY_PASSWORD: "${MQTT_TELEMETRY_PASSWORD:?Run scripts/start-integrated.ps1}"
       MQTT_BROKER_PASSWORD: "${MQTT_BROKER_PASSWORD:?Run scripts/start-integrated.ps1}"
     command: [python, /tools/init-emqx.py]

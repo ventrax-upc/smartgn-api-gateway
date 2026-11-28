@@ -1258,32 +1258,12 @@
               }
             }
           },
-          "404": {
-            "description": "Email is not registered",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/iam_Challenge"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Account is inactive",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/iam_Challenge"
-                }
-              }
-            }
-          },
           "429": {
-            "description": "Recovery request limit exceeded",
+            "description": "Gateway request limit exceeded.",
             "content": {
-              "*/*": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/iam_Challenge"
+                  "$ref": "#/components/schemas/GatewayProblem"
                 }
               }
             }
@@ -5657,6 +5637,102 @@
         "x-upstream-service": "installation"
       }
     },
+    "/api/v1/installations/{id}/corrective-review": {
+      "post": {
+        "tags": [
+          "Installation & Device Management / Installation requests"
+        ],
+        "summary": "Coordinate a corrective installation review",
+        "description": "Requires SUPERADMIN, current version and a reason for started or completed work. Reserves a different accredited installer and preserves earlier intervention history.",
+        "operationId": "installation_correctiveReview",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Resource UUID. Possession of an identifier does not replace authorization.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/installation_CorrectiveReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed successfully.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/installation_Installation"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired, revoked or invalid IAM session."
+          },
+          "403": {
+            "description": "The current account does not have the required role, ownership or meter/function permission."
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "installation"
+      }
+    },
     "/api/v1/support/technicians/{technicianId}": {
       "get": {
         "tags": [
@@ -8055,6 +8131,112 @@
         "x-upstream-service": "support"
       }
     },
+    "/api/v1/support/tickets/{ticketId}/visits/{previousVisitId}/corrective-review": {
+      "post": {
+        "tags": [
+          "Support & Maintenance / Technical visits"
+        ],
+        "summary": "Coordinate a corrective visit",
+        "description": "Requires SUPERADMIN, a completed visit on a resolved ticket, an intervention reason and a future availability interval. Preserves earlier assignments, diagnoses and costs. Assigns a different accredited technician when available.",
+        "operationId": "support_requestCorrectiveVisit",
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "description": "Resource UUID. Possession of an identifier does not replace authorization.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "previousVisitId",
+            "in": "path",
+            "description": "Resource UUID. Possession of an identifier does not replace authorization.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/support_CorrectiveVisitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Resource created.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/support_TechnicalVisit"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired, revoked or invalid IAM session."
+          },
+          "403": {
+            "description": "The current account does not have the required role, ownership or meter/function permission."
+          },
+          "429": {
+            "description": "Gateway request limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream connection failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Upstream unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream deadline exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-upstream-service": "support"
+      }
+    },
     "/api/v1/payment-methods/{id}/default": {
       "put": {
         "tags": [
@@ -8062,7 +8244,7 @@
         ],
         "summary": "Select a default payment method",
         "description": "Requires principal ownership of an active method. Selection is atomic within the account. Authentication: current IAM JWT; roles are USER and SUPERADMIN.",
-        "operationId": "billing_primary",
+        "operationId": "payments_primary",
         "parameters": [
           {
             "name": "id",
@@ -8131,7 +8313,7 @@
             "bearerAuth": []
           }
         ],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/subscriptions/pro": {
@@ -8141,7 +8323,7 @@
         ],
         "summary": "Request a monthly Pro subscription",
         "description": "Requires a verified owned payment method and Idempotency-Key. Pro activates only after confirmed payment. Authentication: current IAM JWT; roles are USER and SUPERADMIN.",
-        "operationId": "billing_pro",
+        "operationId": "payments_pro",
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -8157,7 +8339,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/billing_Pro"
+                "$ref": "#/components/schemas/payments_Pro"
               }
             }
           },
@@ -8226,7 +8408,7 @@
             "bearerAuth": []
           }
         ],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/payments/orders/{id}/retry": {
@@ -8236,7 +8418,7 @@
         ],
         "summary": "Retry a declined payment order",
         "description": "Requires principal ownership and Idempotency-Key. Explicit retries apply to verified declines, not unresolved operations. Authentication: current IAM JWT; roles are USER and SUPERADMIN.",
-        "operationId": "billing_retry",
+        "operationId": "payments_retry",
         "parameters": [
           {
             "name": "id",
@@ -8262,7 +8444,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/billing_Pay"
+                "$ref": "#/components/schemas/payments_Pay"
               }
             }
           },
@@ -8331,7 +8513,7 @@
             "bearerAuth": []
           }
         ],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/payments/orders/{id}/pay": {
@@ -8341,7 +8523,7 @@
         ],
         "summary": "Pay an owned pending order",
         "description": "Requires an owned verified method and an eligible order. Unknown provider results remain unresolved and cannot create a second debit. Authentication: current IAM JWT; roles are USER and SUPERADMIN.",
-        "operationId": "billing_pay",
+        "operationId": "payments_pay",
         "parameters": [
           {
             "name": "id",
@@ -8358,7 +8540,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/billing_Pay"
+                "$ref": "#/components/schemas/payments_Pay"
               }
             }
           },
@@ -8427,7 +8609,7 @@
             "bearerAuth": []
           }
         ],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/payment-methods": {
@@ -8437,7 +8619,7 @@
         ],
         "summary": "List owned payment methods",
         "description": "Requires the principal account. Returns masked metadata only; PAN and CVV are never accepted or stored. Authentication: current IAM JWT; roles are USER and SUPERADMIN.",
-        "operationId": "billing_list",
+        "operationId": "payments_list",
         "responses": {
           "200": {
             "description": "Operation completed successfully.",
@@ -8501,7 +8683,7 @@
             "bearerAuth": []
           }
         ],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       },
       "post": {
         "tags": [
@@ -8509,12 +8691,12 @@
         ],
         "summary": "Register an owned payment token",
         "description": "Requires the principal account and provider-verified token ownership. Stores a protected token and masked card metadata. Authentication: current IAM JWT; roles are USER and SUPERADMIN.",
-        "operationId": "billing_add",
+        "operationId": "payments_add",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/billing_Card"
+                "$ref": "#/components/schemas/payments_Card"
               }
             }
           },
@@ -8583,7 +8765,7 @@
             "bearerAuth": []
           }
         ],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/checkout/orders": {
@@ -8593,7 +8775,7 @@
         ],
         "summary": "Create a priced checkout order",
         "description": "Validates the provisional Installation contact and calculates device/installation prices on the server. Requires Idempotency-Key and a private X-Checkout-Secret. Authentication: no user JWT required; the operation-specific token or checkout secret still applies when specified.",
-        "operationId": "billing_checkout",
+        "operationId": "payments_checkout",
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -8622,7 +8804,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/billing_Checkout"
+                "$ref": "#/components/schemas/payments_Checkout"
               }
             }
           },
@@ -8684,7 +8866,7 @@
           }
         },
         "security": [],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/checkout/orders/{id}/sessions": {
@@ -8694,7 +8876,7 @@
         ],
         "summary": "Create checkout session instructions",
         "description": "Requires the private checkout secret. In local mode, returns either simulated checkout instructions or a Niubiz Sandbox session when enabled.",
-        "operationId": "billing_session",
+        "operationId": "payments_session",
         "parameters": [
           {
             "name": "id",
@@ -8772,7 +8954,7 @@
           }
         },
         "security": [],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/subscriptions/me/renewal": {
@@ -8782,12 +8964,12 @@
         ],
         "summary": "Change automatic renewal consent",
         "description": "Requires the principal account. Enabling renewal requires an active method with recurring-payment consent. Authentication: current IAM JWT; roles are USER and SUPERADMIN.",
-        "operationId": "billing_renewal",
+        "operationId": "payments_renewal",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/billing_Renewal"
+                "$ref": "#/components/schemas/payments_Renewal"
               }
             }
           },
@@ -8849,7 +9031,7 @@
             "bearerAuth": []
           }
         ],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/technical-statements/{id}": {
@@ -8859,7 +9041,7 @@
         ],
         "summary": "Get a completed visit statement",
         "description": "Requires principal ownership. Returns the frozen final cost, coverage, balance and payable order reference; coverage uses the effective completion timestamp. Authentication: current IAM JWT; roles are USER and SUPERADMIN.",
-        "operationId": "billing_statement",
+        "operationId": "payments_statement",
         "parameters": [
           {
             "name": "id",
@@ -8935,7 +9117,7 @@
             "bearerAuth": []
           }
         ],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/subscriptions/me": {
@@ -8945,7 +9127,7 @@
         ],
         "summary": "Get the current subscription entitlement",
         "description": "Requires the principal account. Returns the effective plan and paid-through period; JWT plan claims are not authoritative. Authentication: current IAM JWT; roles are USER and SUPERADMIN.",
-        "operationId": "billing_plan",
+        "operationId": "payments_plan",
         "responses": {
           "200": {
             "description": "Operation completed successfully.",
@@ -9009,7 +9191,7 @@
             "bearerAuth": []
           }
         ],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/payments/orders/{id}": {
@@ -9019,7 +9201,7 @@
         ],
         "summary": "Get an owned payment order",
         "description": "Requires principal ownership and returns the order's persisted financial state. Authentication: current IAM JWT; roles are USER and SUPERADMIN.",
-        "operationId": "billing_order",
+        "operationId": "payments_order",
         "parameters": [
           {
             "name": "id",
@@ -9095,7 +9277,7 @@
             "bearerAuth": []
           }
         ],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/payments/history": {
@@ -9105,7 +9287,7 @@
         ],
         "summary": "List owned financial history",
         "description": "Requires the principal account. Applies offset/limit and optional reason/status filters to owned orders, attempts and document references. Authentication: current IAM JWT; roles are USER and SUPERADMIN.",
-        "operationId": "billing_history",
+        "operationId": "payments_history",
         "parameters": [
           {
             "name": "offset",
@@ -9214,7 +9396,7 @@
             "bearerAuth": []
           }
         ],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/checkout/orders/{id}": {
@@ -9224,7 +9406,7 @@
         ],
         "summary": "Get a private checkout order",
         "description": "Requires the matching X-Checkout-Secret. The order UUID alone does not authorize access. Authentication: no user JWT required; the operation-specific token or checkout secret still applies when specified.",
-        "operationId": "billing_order_1",
+        "operationId": "payments_order_1",
         "parameters": [
           {
             "name": "id",
@@ -9302,7 +9484,7 @@
           }
         },
         "security": [],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/billing-documents/{id}": {
@@ -9312,7 +9494,7 @@
         ],
         "summary": "Get an owned billing document",
         "description": "Requires principal ownership. Fiscal response status is independent from payment status; local/beta results are explicitly marked as test evidence. Authentication: current IAM JWT; roles are USER and SUPERADMIN.",
-        "operationId": "billing_document",
+        "operationId": "payments_document",
         "parameters": [
           {
             "name": "id",
@@ -9388,7 +9570,7 @@
             "bearerAuth": []
           }
         ],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/billing-documents/{id}/download": {
@@ -9398,7 +9580,7 @@
         ],
         "summary": "Download an owned fiscal artifact",
         "description": "Requires principal ownership. Supports PDF, signed XML and CDR ZIP when available; unavailable artifacts are rejected. Authentication: current IAM JWT; roles are USER and SUPERADMIN.",
-        "operationId": "billing_download",
+        "operationId": "payments_download",
         "parameters": [
           {
             "name": "id",
@@ -9502,7 +9684,7 @@
             "bearerAuth": []
           }
         ],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/payment-methods/{id}": {
@@ -9512,7 +9694,7 @@
         ],
         "summary": "Unlink an owned payment method",
         "description": "Requires principal ownership. Disables dependent renewal consent and preserves masked history; unresolved operations must be reconciled first. Authentication: current IAM JWT; roles are USER and SUPERADMIN.",
-        "operationId": "billing_delete",
+        "operationId": "payments_delete",
         "parameters": [
           {
             "name": "id",
@@ -9581,7 +9763,7 @@
             "bearerAuth": []
           }
         ],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/checkout/orders/{id}/sandbox-authorizations": {
@@ -9591,7 +9773,7 @@
         ],
         "summary": "Authorize a local test checkout",
         "description": "Requires the private checkout secret. Billing verifies the Niubiz Sandbox token or processes the explicitly enabled local simulator action against the stored order.",
-        "operationId": "billing_authorize",
+        "operationId": "payments_authorize",
         "parameters": [
           {
             "name": "id",
@@ -9617,7 +9799,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/billing_Authorization"
+                "$ref": "#/components/schemas/payments_Authorization"
               }
             }
           },
@@ -9679,7 +9861,7 @@
           }
         },
         "security": [],
-        "x-upstream-service": "billing"
+        "x-upstream-service": "payments"
       }
     },
     "/api/v1/alert-rules/{ruleId}": {
@@ -12565,6 +12747,30 @@
           "contact"
         ]
       },
+      "installation_CorrectiveReviewRequest": {
+        "type": "object",
+        "properties": {
+          "installerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "installerId",
+          "reason",
+          "version"
+        ]
+      },
       "installation_CancelInstallation": {
         "type": "object",
         "properties": {
@@ -12595,6 +12801,96 @@
         "required": [
           "installerId"
         ]
+      },
+      "installation_VerifiedCreate": {
+        "type": "object",
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "proof": {
+            "type": "string",
+            "maxLength": 72,
+            "minLength": 72
+          },
+          "contact": {
+            "$ref": "#/components/schemas/installation_Contact"
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "address",
+          "challengeId",
+          "contact",
+          "proof"
+        ]
+      },
+      "installation_CreatedRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "installation_Send": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "installation_Challenge": {
+        "type": "object",
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "installation_Confirm": {
+        "type": "object",
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "[0-9]{6}"
+          }
+        },
+        "required": [
+          "challengeId",
+          "code"
+        ]
+      },
+      "installation_Proof": {
+        "type": "object",
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "proof": {
+            "type": "string"
+          }
+        }
       },
       "installation_RegisterDevice": {
         "type": "object",
@@ -12855,96 +13151,6 @@
           }
         }
       },
-      "installation_VerifiedCreate": {
-        "type": "object",
-        "properties": {
-          "challengeId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "proof": {
-            "type": "string",
-            "maxLength": 72,
-            "minLength": 72
-          },
-          "contact": {
-            "$ref": "#/components/schemas/installation_Contact"
-          },
-          "address": {
-            "type": "string",
-            "maxLength": 500,
-            "minLength": 0
-          }
-        },
-        "required": [
-          "address",
-          "challengeId",
-          "contact",
-          "proof"
-        ]
-      },
-      "installation_CreatedRequest": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          }
-        }
-      },
-      "installation_Send": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "maxLength": 254,
-            "minLength": 0
-          }
-        },
-        "required": [
-          "email"
-        ]
-      },
-      "installation_Challenge": {
-        "type": "object",
-        "properties": {
-          "challengeId": {
-            "type": "string",
-            "format": "uuid"
-          }
-        }
-      },
-      "installation_Confirm": {
-        "type": "object",
-        "properties": {
-          "challengeId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "code": {
-            "type": "string",
-            "minLength": 1,
-            "pattern": "[0-9]{6}"
-          }
-        },
-        "required": [
-          "challengeId",
-          "code"
-        ]
-      },
-      "installation_Proof": {
-        "type": "object",
-        "properties": {
-          "challengeId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "proof": {
-            "type": "string"
-          }
-        }
-      },
       "support_UpdateTechnicianRequest": {
         "type": "object",
         "properties": {
@@ -13031,6 +13237,13 @@
           "completedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "correctiveOfVisitId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "correctiveReason": {
+            "type": "string"
           },
           "assignments": {
             "type": "array",
@@ -13177,6 +13390,9 @@
           "description": {
             "type": "string",
             "minLength": 1
+          },
+          "safetyCritical": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -13227,8 +13443,37 @@
           "closedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "safetyCritical": {
+            "type": "boolean"
+          },
+          "proPriority": {
+            "type": "boolean"
           }
         }
+      },
+      "support_CorrectiveVisitRequest": {
+        "type": "object",
+        "properties": {
+          "requestedWindowStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requestedWindowEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "reason",
+          "requestedWindowEnd",
+          "requestedWindowStart"
+        ]
       },
       "support_AddReplyRequest": {
         "type": "object",
@@ -13424,7 +13669,7 @@
           }
         }
       },
-      "billing_Pro": {
+      "payments_Pro": {
         "type": "object",
         "properties": {
           "paymentMethodId": {
@@ -13439,7 +13684,7 @@
           "paymentMethodId"
         ]
       },
-      "billing_Pay": {
+      "payments_Pay": {
         "type": "object",
         "properties": {
           "paymentMethodId": {
@@ -13451,7 +13696,7 @@
           "paymentMethodId"
         ]
       },
-      "billing_Card": {
+      "payments_Card": {
         "type": "object",
         "properties": {
           "providerToken": {
@@ -13473,7 +13718,7 @@
           "providerToken"
         ]
       },
-      "billing_Checkout": {
+      "payments_Checkout": {
         "type": "object",
         "properties": {
           "installationId": {
@@ -13503,7 +13748,7 @@
           "lastName"
         ]
       },
-      "billing_Renewal": {
+      "payments_Renewal": {
         "type": "object",
         "properties": {
           "autoRenew": {
@@ -13511,7 +13756,7 @@
           }
         }
       },
-      "billing_Authorization": {
+      "payments_Authorization": {
         "type": "object",
         "properties": {
           "transactionToken": {
@@ -13539,6 +13784,8 @@
               "CONSUMPTION",
               "PRESSURE",
               "GAS_PRESENCE",
+              "LEAK_DETECTED",
+              "AUTONOMOUS_ACTUATION_FAILED",
               "VALVE_STATE"
             ]
           },
@@ -13870,6 +14117,18 @@
             "type": "string",
             "format": "date-time"
           },
+          "leakDetected": {
+            "type": "boolean"
+          },
+          "observedValveOpen": {
+            "type": "boolean"
+          },
+          "autonomousActuationReported": {
+            "type": "boolean"
+          },
+          "autonomousActuationResult": {
+            "type": "string"
+          },
           "receivedAt": {
             "type": "string",
             "format": "date-time"
@@ -13906,6 +14165,8 @@
               "CONSUMPTION",
               "PRESSURE",
               "GAS_PRESENCE",
+              "LEAK_DETECTED",
+              "AUTONOMOUS_ACTUATION_FAILED",
               "VALVE_STATE"
             ],
             "example": "PRESSURE"

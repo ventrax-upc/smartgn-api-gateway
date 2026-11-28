@@ -16,7 +16,7 @@ export function loadConfig(env = process.env) {
   const services = {};
   for (const [name, key, port] of [
     ['iam', 'IAM_URL', 8080], ['installation', 'INSTALLATION_URL', 8081],
-    ['support', 'SUPPORT_URL', 8082], ['billing', 'BILLING_URL', 8083],
+    ['support', 'SUPPORT_URL', 8082], ['payments', 'PAYMENTS_URL', 8083],
     ['alerting', 'ALERTING_URL', 8086], ['monitoring', 'MONITORING_URL', 8084],
   ]) {
     const url = new URL(env[key] || `http://localhost:${port}`);

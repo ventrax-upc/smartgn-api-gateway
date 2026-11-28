@@ -60,7 +60,7 @@ before(async () => {
     IAM_URL: `http://127.0.0.1:${backendPort}`,
     INSTALLATION_URL: `http://127.0.0.1:${backendPort}`,
     SUPPORT_URL: `http://127.0.0.1:${slowPort}`,
-    BILLING_URL: 'http://127.0.0.1:1', // nothing listening
+    PAYMENTS_URL: 'http://127.0.0.1:1', // nothing listening
     ALERTING_URL: `http://127.0.0.1:${backendPort}`,
     MONITORING_URL: `http://127.0.0.1:${backendPort}`,
     PROXY_TIMEOUT_MS: '400',

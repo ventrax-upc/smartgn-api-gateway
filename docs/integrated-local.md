@@ -1,9 +1,11 @@
 # Integrated local SmartGN
 
 The [workspace startup guide](../README.md#start-all-13-repositories-locally)
-covers the backend, SPA and Landing. The Compose project runs 11 SmartGN services and their local infrastructure. Run
-the commands from this repository with the other ten repositories checked out as
-siblings. The SPA uses the Gateway at http://localhost:8000 and can run separately.
+covers the backend, SPA and Landing. The Compose project runs the eleven
+backend services, the SPA and local infrastructure. With the documented
+workspace layout, open the SPA at http://localhost:4200. Set
+`SMARTGN_FRONTEND_CONTEXT` to the Compose-relative frontend path if the
+checkouts use a different layout.
 
 ```powershell
 ./scripts/start-integrated.ps1
@@ -23,7 +25,7 @@ clean start while keeping existing demo data.
 
 ## Access
 
-The integrated Compose publishes these ports on loopback. The HTTP port in the table is also the listening port inside each container. Service-to-service calls use the Docker DNS name and that port. Telemetry and Billing retain private gRPC listeners at 9084 and 9083.
+The integrated Compose publishes these ports on loopback. The HTTP port in the table is also the listening port inside each container. Service-to-service calls use the Docker DNS name and that port. Telemetry and Payments retain private gRPC listeners at 9084 and 9083.
 
 | Service | Local port | Browser path |
 | --- | ---: | --- |
@@ -79,7 +81,7 @@ reject anonymous access, public operations must reject incomplete inputs,
 and health requests must succeed. Each observed status must be documented.
 The smoke also exercises authenticated
 workflows, including simulated notification delivery from a telemetry alert,
-Support visit completion and Billing coverage, and session revocation.
+Support visit completion and Payments coverage, and session revocation.
 Service docs define request and response details for REST,
 gRPC and MQTT. Config uses the local profile and application names. Supply secrets
 through the environment. Deployment-specific URLs, transport security and external
@@ -87,6 +89,6 @@ provider settings belong in the deployment environment.
 
 ## Telemetry recovery smoke
 
-Run `./scripts/smoke-telemetry-recovery.ps1` on a local integration stack with the Billing simulator and the fixture notification provider. It creates a uniquely identified checkout, account and test meter, persists 360 simulator readings in SQLite under `.local`, interrupts InfluxDB and Alerting, restarts Telemetry and checks recovery. The sample timestamps model one hour of offline collection. The simulator performs the MQTT publisher part of the recovery test. The command temporarily stops those local services and restores them on exit.
+Run `./scripts/smoke-telemetry-recovery.ps1` on a local integration stack with the Payments simulator and the fixture notification provider. It creates a uniquely identified checkout, account and test meter, persists 360 simulator readings in SQLite under `.local`, interrupts InfluxDB and Alerting, restarts Telemetry and checks recovery. The sample timestamps model one hour of offline collection. The simulator performs the MQTT publisher part of the recovery test. The command temporarily stops those local services and restores them on exit.
 
 Telemetry stores its processing ledger in the dedicated `telemetry-postgres-data` volume. The standard startup script creates credentials for that database and keeps existing integrated volumes. Use `TELEMETRY_MQTT_CLIENT_ID` and `TELEMETRY_MQTT_TOPIC` to configure the integrated subscriber.

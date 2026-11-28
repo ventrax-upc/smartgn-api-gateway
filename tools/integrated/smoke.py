@@ -16,7 +16,7 @@ SERVICES = {
     "iam": (8080, "/actuator/health", "/v3/api-docs"),
     "installation": (8081, "/actuator/health", "/v3/api-docs"),
     "support": (8082, "/actuator/health", "/v3/api-docs"),
-    "billing": (8083, "/actuator/health", "/v3/api-docs"),
+    "payments": (8083, "/actuator/health", "/v3/api-docs"),
     "alerting": (8086, "/actuator/health", "/v3/api-docs"),
     "telemetry": (8085, "/ready", "/v3/api-docs"),
     "monitoring": (8084, "/health", "/v3/api-docs"),
@@ -27,7 +27,7 @@ SERVICES = {
 }
 OPENAPI_REPOS = {
     "iam": "iam", "installation": "installation-device-management", "support": "support-maintenance",
-    "billing": "payments-billing", "alerting": "alerting-notifications", "telemetry": "telemetry-data-ingestion",
+    "payments": "payments-billing", "alerting": "alerting-notifications", "telemetry": "telemetry-data-ingestion",
     "monitoring": "monitoring-analytics", "message-broker": "message-broker", "api-gateway": "api-gateway",
 }
 METHODS = {"get", "post", "put", "patch", "delete", "head", "options", "trace"}
@@ -228,9 +228,9 @@ def verify_support_billing(records, state, owner):
     statement_path = f"/api/v1/technical-statements/{visit_id}"
     statement = eventually(lambda: (item if (item := call("GET", statement_path, headers=owner,
                                                           expected=(200, 404))).get("covered")
-                                    else None), "Support completion delivered to Billing")
+                                    else None), "Support completion delivered to Payments")
     assert float(statement["balance"]) == 0
-    print("PASS Support visit completion reached Billing and duplicate completion was rejected", flush=True)
+    print("PASS Support visit completion reached Payments and duplicate completion was rejected", flush=True)
 
 
 
@@ -319,7 +319,7 @@ def main():
     report_query = urlencode({"meterIds": point, "from": (end - timedelta(days=records["demo-analytics-window"]["reportDays"])).isoformat(),
                               "to": end.isoformat()})
     report = call("GET", "/api/v1/analytics/reports?" + report_query, headers=owner)
-    assert report, "Billing gRPC and Monitoring report did not return a result"
+    assert report, "Payments gRPC and Monitoring report did not return a result"
     assert call("GET", "/api/v1/alerts", headers=owner)
     assert call("GET", "/api/v1/support/tickets", headers=owner)
     verify_notification_delivery(owner, other, records["demo-account-pro"]["email"])

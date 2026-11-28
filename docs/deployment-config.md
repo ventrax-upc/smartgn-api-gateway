@@ -3,8 +3,10 @@
 Follow the [AWS deployment guide](../README.md#deploy-the-backend-and-spa-on-aws)
 for EC2 and the public endpoints. The 12 application images share a release
 tag. Only the API Gateway and the SPA receive public HTTP traffic through the
-ALB. The SPA calls the Gateway over Compose DNS. The Landing calls the public
-API origin directly.
+ALB. Set `SMARTGN_GATEWAY_SCHEME=https` and `SMARTGN_GATEWAY_UPSTREAM` to
+the certified API hostname on the ALB. The SPA proxy uses SNI and certificate
+verification. Local Compose defaults to the private Gateway service over HTTP.
+The Landing calls the public API origin directly.
 
 ## Publish the release images
 
@@ -15,16 +17,14 @@ repositories present. Use a host matching the EC2 architecture or set
 ```bash
 export SMARTGN_DOCKERHUB_NAMESPACE=your-namespace
 export SMARTGN_IMAGE_TAG=your-release
-spa=../../smartgn-frontend
 umask 077
 pwsh -File scripts/start-integrated.ps1 -PrepareOnly
 compose=(docker compose -p smartgn-release --env-file .local/integrated.env \
-  -f compose.integration.yml -f "$spa/compose.frontend.yml")
-services=(config admin message-broker iam installation support billing alerting telemetry monitoring api-gateway)
+  -f compose.integration.yml)
+services=(config admin message-broker iam installation support payments alerting telemetry monitoring api-gateway frontend)
 "${compose[@]}" build "${services[@]}"
-docker build -t smartgn-frontend:local "$spa"
 docker login
-for service in "${services[@]}" frontend; do
+for service in "${services[@]}"; do
   source="smartgn-release-$service"
   if [ "$service" = frontend ]; then source=smartgn-frontend:local; fi
   target="$SMARTGN_DOCKERHUB_NAMESPACE/smartgn:$SMARTGN_IMAGE_TAG-$service"
@@ -46,12 +46,12 @@ with the volumes. Use files or a deployment secret store for credentials.
 | Identity, admin and encryption | `BOOTSTRAP_SUPERADMIN_PASSWORD`, `SMARTGN_ADMIN_PASSWORD`, `DELIVERY_ENCRYPTION_KEY`, `DEVICE_CREDENTIAL_KEY`, `CARD_ENCRYPTION_KEY`. Preserve signing and encryption keys when reusing data. |
 | PostgreSQL | `POSTGRES_PASSWORD`, `DB_IAM_DB`, `DB_INSTALLATION_DB`, `DB_SMARTGN_SUPPORT_DB`, `DB_BILLING_DB`, `DB_SMARTGN_ALERTING_DB`, `DB_SMARTGN_MONITORING`, `DB_TELEMETRY_ADMIN`, `DB_TELEMETRY`. Telemetry uses a dedicated PostgreSQL instance. |
 | InfluxDB and Redis | `INFLUX_PASSWORD` and `INFLUX_TOKEN` bootstrap InfluxDB. Redis uses the private Compose network. |
-| EMQX | `DEVICE_BROKER_API_KEY`, `DEVICE_BROKER_API_SECRET`, `MQTT_PASSWORD`, `MQTT_BROKER_PASSWORD`, `MQTT_SUPPORT_PASSWORD`, `MQTT_BILLING_PASSWORD`, `MQTT_TELEMETRY_PASSWORD`. Use a private network or VPN for external test devices. |
+| EMQX | `DEVICE_BROKER_API_KEY`, `DEVICE_BROKER_API_SECRET`, `MQTT_PASSWORD`, `MQTT_BROKER_PASSWORD`, `MQTT_SUPPORT_PASSWORD`, `MQTT_PAYMENTS_PASSWORD`, `MQTT_TELEMETRY_PASSWORD`. Use a private network or VPN for external test devices. |
 | Email | `CHECKOUT_EMAIL_MODE=resend` on Installation and `IAM_EMAIL_MODE=resend` on IAM enable delivery. Both require `RESEND_API_KEY` and a verified `RESEND_FROM_EMAIL`. `APP_PASSWORD_RESET_FROM_EMAIL` is an accepted Compose alias. |
-| Test billing and delivery | The registry overlay disables browser payment simulation. It can use `NIUBIZ_SANDBOX_ENABLED=true` with `NIUBIZ_SANDBOX_MERCHANT`, `NIUBIZ_SANDBOX_USER` and `NIUBIZ_SANDBOX_PASSWORD`. Fiscal status still uses the local adapter and the generated test `TAX_KEY_PASSWORD` certificate. Alerting and internal fixture contracts retain their local configuration. `FIXTURE_ADMIN_TOKEN` and `DEMO_USER_PASSWORD` remain required Compose inputs. |
+| Test payments and delivery | The registry overlay disables browser payment simulation. It can use `NIUBIZ_SANDBOX_ENABLED=true` with `NIUBIZ_SANDBOX_MERCHANT`, `NIUBIZ_SANDBOX_USER` and `NIUBIZ_SANDBOX_PASSWORD`. Fiscal status still uses the local adapter and the generated test `TAX_KEY_PASSWORD` certificate. Alerting and internal fixture contracts retain their local configuration. `FIXTURE_ADMIN_TOKEN` and `DEMO_USER_PASSWORD` remain required Compose inputs. |
 
 Compose handles the Gateway's `IAM_URL`, `INSTALLATION_URL`, `SUPPORT_URL`,
-`BILLING_URL`, `ALERTING_URL` and `MONITORING_URL` through private DNS.
+`PAYMENTS_URL`, `ALERTING_URL` and `MONITORING_URL` through private DNS.
 Outside this Compose network, set their private HTTP origins and align
 `JWT_ISSUER` and `JWT_AUDIENCE` with IAM. Telemetry exposes
 `TELEMETRY_MQTT_CLIENT_ID`, `TELEMETRY_MQTT_TOPIC` and
