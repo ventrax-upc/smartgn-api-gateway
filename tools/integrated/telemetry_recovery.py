@@ -8,7 +8,7 @@ from urllib.parse import urlencode
 from uuid import UUID, uuid4
 
 import seed
-from seed import BILLING, DELIVERY, FIXTURE, GATEWAY, SERVICE, Mqtt5, STATE_FILE, call, eventually, fixtures, login, now
+from seed import PAYMENTS, DELIVERY, FIXTURE, GATEWAY, SERVICE, Mqtt5, STATE_FILE, call, eventually, fixtures, login, now
 
 
 def prepare_fixture(batch, path, session_base):
@@ -52,10 +52,10 @@ def prepare_fixture(batch, path, session_base):
     reference = "sprint3-" + batch
     call("POST", "/internal/v1/local-provider/results", {
         "reference": reference, "orderId": order["id"], "status": "CONFIRMED", "amount": order["amount"],
-    }, SERVICE, BILLING)
+    }, SERVICE, PAYMENTS)
     confirmation = {"orderId": order["id"], "providerReference": reference}
-    call("POST", "/internal/v1/payments/confirmations", confirmation, SERVICE, BILLING)
-    call("POST", "/internal/v1/payments/confirmations", confirmation, SERVICE, BILLING)
+    call("POST", "/internal/v1/payments/confirmations", confirmation, SERVICE, PAYMENTS)
+    call("POST", "/internal/v1/payments/confirmations", confirmation, SERVICE, PAYMENTS)
     assert call("GET", order_path, headers=checkout)["status"] == "CONFIRMED"
     password = os.environ["DEMO_USER_PASSWORD"]
     call("POST", "/api/v1/auth/activate-password", {

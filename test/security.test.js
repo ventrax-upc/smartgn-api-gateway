@@ -38,7 +38,7 @@ async function setup(t, environment = {}) {
   await new Promise((resolve) => backend.listen(0, '127.0.0.1', resolve));
   const url = `http://127.0.0.1:${backend.address().port}`;
   const config = loadConfig({ JWT_SECRET: secret, RATE_LIMIT_MAX: '1000',
-    IAM_URL: url, INSTALLATION_URL: url, SUPPORT_URL: url, BILLING_URL: url,
+    IAM_URL: url, INSTALLATION_URL: url, SUPPORT_URL: url, PAYMENTS_URL: url,
     ALERTING_URL: url, MONITORING_URL: url, INTERNAL_SERVICE_TOKEN: 'test-internal-token',
     CORS_ORIGINS: 'http://localhost:4200', ...environment });
   const gateway = http.createServer(createApp(config));
@@ -184,11 +184,11 @@ test('OpenAPI exposes only public contracts and reports readiness separately fro
 });
 
 test('readiness fails closed when a dependency is unavailable while liveness remains UP', async (t) => {
-  const { url } = await setup(t, { BILLING_URL: 'http://127.0.0.1:1' });
+  const { url } = await setup(t, { PAYMENTS_URL: 'http://127.0.0.1:1' });
   assert.equal((await fetch(url + '/health')).status, 200);
   const response = await fetch(url + '/ready');
   assert.equal(response.status, 503);
-  assert.equal((await response.json()).dependencies.billing, 'DOWN');
+  assert.equal((await response.json()).dependencies.payments, 'DOWN');
 });
 
 test('configuration rejects malformed ports, weak secrets and credential-bearing service URLs', () => {

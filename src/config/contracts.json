@@ -342,6 +342,12 @@
     "public": true
   },
   {
+    "method": "POST",
+    "path": "/api/v1/installations/{id}/corrective-review",
+    "service": "installation",
+    "public": false
+  },
+  {
     "method": "GET",
     "path": "/api/v1/support/technicians/{technicianId}",
     "service": "support",
@@ -486,111 +492,117 @@
     "public": false
   },
   {
+    "method": "POST",
+    "path": "/api/v1/support/tickets/{ticketId}/visits/{previousVisitId}/corrective-review",
+    "service": "support",
+    "public": false
+  },
+  {
     "method": "PUT",
     "path": "/api/v1/payment-methods/{id}/default",
-    "service": "billing",
+    "service": "payments",
     "public": false
   },
   {
     "method": "POST",
     "path": "/api/v1/subscriptions/pro",
-    "service": "billing",
+    "service": "payments",
     "public": false
   },
   {
     "method": "POST",
     "path": "/api/v1/payments/orders/{id}/retry",
-    "service": "billing",
+    "service": "payments",
     "public": false
   },
   {
     "method": "POST",
     "path": "/api/v1/payments/orders/{id}/pay",
-    "service": "billing",
+    "service": "payments",
     "public": false
   },
   {
     "method": "GET",
     "path": "/api/v1/payment-methods",
-    "service": "billing",
+    "service": "payments",
     "public": false
   },
   {
     "method": "POST",
     "path": "/api/v1/payment-methods",
-    "service": "billing",
+    "service": "payments",
     "public": false
   },
   {
     "method": "POST",
     "path": "/api/v1/checkout/orders",
-    "service": "billing",
+    "service": "payments",
     "public": true
   },
   {
     "method": "POST",
     "path": "/api/v1/checkout/orders/{id}/sessions",
-    "service": "billing",
+    "service": "payments",
     "public": true
   },
   {
     "method": "PATCH",
     "path": "/api/v1/subscriptions/me/renewal",
-    "service": "billing",
+    "service": "payments",
     "public": false
   },
   {
     "method": "GET",
     "path": "/api/v1/technical-statements/{id}",
-    "service": "billing",
+    "service": "payments",
     "public": false
   },
   {
     "method": "GET",
     "path": "/api/v1/subscriptions/me",
-    "service": "billing",
+    "service": "payments",
     "public": false
   },
   {
     "method": "GET",
     "path": "/api/v1/payments/orders/{id}",
-    "service": "billing",
+    "service": "payments",
     "public": false
   },
   {
     "method": "GET",
     "path": "/api/v1/payments/history",
-    "service": "billing",
+    "service": "payments",
     "public": false
   },
   {
     "method": "GET",
     "path": "/api/v1/checkout/orders/{id}",
-    "service": "billing",
+    "service": "payments",
     "public": true
   },
   {
     "method": "GET",
     "path": "/api/v1/billing-documents/{id}",
-    "service": "billing",
+    "service": "payments",
     "public": false
   },
   {
     "method": "GET",
     "path": "/api/v1/billing-documents/{id}/download",
-    "service": "billing",
+    "service": "payments",
     "public": false
   },
   {
     "method": "DELETE",
     "path": "/api/v1/payment-methods/{id}",
-    "service": "billing",
+    "service": "payments",
     "public": false
   },
   {
     "method": "POST",
     "path": "/api/v1/checkout/orders/{id}/sandbox-authorizations",
-    "service": "billing",
+    "service": "payments",
     "public": true
   },
   {

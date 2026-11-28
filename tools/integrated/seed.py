@@ -12,7 +12,7 @@ from uuid import NAMESPACE_URL, uuid5
 
 WORKSPACE = Path("/workspace")
 GATEWAY = "http://api-gateway:8000"
-BILLING = "http://billing:8083"
+PAYMENTS = "http://payments:8083"
 DELIVERY = "http://delivery:8091"
 SERVICE = {"Authorization": "Bearer " + os.environ["INTERNAL_SERVICE_TOKEN"]}
 FIXTURE = {"Authorization": "Bearer " + os.environ["FIXTURE_ADMIN_TOKEN"]}
@@ -105,10 +105,10 @@ def account(record, state, amount):
     reference = "demo-" + stable(alias + "/provider")
     call("POST", "/internal/v1/local-provider/results", {
         "reference": reference, "orderId": order["id"], "status": "CONFIRMED", "amount": amount,
-    }, SERVICE, BILLING)
+    }, SERVICE, PAYMENTS)
     call("POST", "/internal/v1/payments/confirmations", {
         "orderId": order["id"], "providerReference": reference,
-    }, SERVICE, BILLING)
+    }, SERVICE, PAYMENTS)
     password = os.environ["DEMO_USER_PASSWORD"]
     try:
         return (*login(email, password), installation)
@@ -182,6 +182,9 @@ def setup_meter(records, state, admin, owner, installation, device_serial="SMART
         associations = call("GET", f"/api/v1/devices/{device_id}/associations", headers=admin)
         association = next(item for item in associations if item["version"] == active["associationVersion"])
         valid_from = datetime.fromisoformat(association["validFrom"])
+        # Keep the historic and current fixtures ordered without putting a reading in the future.
+        fixture_window = valid_from + timedelta(seconds=3)
+        time.sleep(max(0, (fixture_window - now()).total_seconds()))
         for reading in reversed(meter["readings"]):
             timestamp = now() + timedelta(days=reading.get("measuredAtOffsetDays", 0),
                                           minutes=reading.get("measuredAtOffsetMinutes", 0))
@@ -212,7 +215,7 @@ def setup_meter(records, state, admin, owner, installation, device_serial="SMART
     return point
 
 
-def ensure_alert_notification(records, state, admin, owner, account_id):
+def ensure_notification_preference(records, owner, account_id):
     preference = records["demo-notification-preference-pro"]
     contact = records[preference["accountAlias"]]
     saved = call("PUT", "/api/v1/notification-preferences", {
@@ -229,7 +232,10 @@ def ensure_alert_notification(records, state, admin, owner, account_id):
                     item.get("recipient") == contact["email"] and item.get("active")
                     for item in preferences)):
         raise RuntimeError("Demo alert notification preference was not saved")
+    return preference, contact
 
+
+def ensure_alert_notification(records, state, admin, owner, preference, contact):
     meter = records["demo-meter-primary"]
     device_id = meter["deviceId"]
     probe = meter["notificationProbe"]
@@ -316,19 +322,20 @@ def main():
     for alias in ("demo-account-free", "demo-account-other"):
         account(records[alias], state, plan["amount"])
     owner, account_id, installation = account(records["demo-account-pro"], state, plan["amount"])
+    preference, contact = ensure_notification_preference(records, owner, account_id)
     rule = records["demo-rule-low-pressure"]
     checkpoint(state, rule["alias"], lambda: call("POST", "/api/v1/alert-rules", {
         field: rule[field] for field in ("name", "metric", "operator", "threshold", "severity", "description", "active")
     }, admin, expected=(201, 409)))
     point = setup_meter(records, state, admin, owner, installation)
-    ensure_alert_notification(records, state, admin, owner, account_id)
+    ensure_alert_notification(records, state, admin, owner, preference, contact)
     ticket = records["demo-ticket-primary"]
     created_ticket = checkpoint(state, ticket["alias"], lambda: call("POST", "/api/v1/support/tickets", {
         "principalAccountId": account_id, "meterId": point, "subject": ticket["subject"],
         "description": ticket["description"],
     }, owner, expected=(201,)))
     eventually(lambda: call("GET", "/api/v1/subscriptions/me", headers=owner).get("installationCompleted"),
-               "Billing completion")
+               "Payments completion")
     checkpoint(state, "demo-support-visit", lambda: call(
         "POST", f"/api/v1/support/tickets/{created_ticket['ticketId']}/visits", {
             "requestedWindowStart": (now() + timedelta(days=1)).isoformat(),
@@ -338,7 +345,7 @@ def main():
     call("POST", "/internal/v1/local-provider/cards", {
         "accountId": account_id, "providerToken": card_token, "brand": plan["brand"],
         "lastFour": plan["lastFour"], "recurringAuthorized": True, "nextStatus": "CONFIRMED",
-    }, SERVICE, BILLING)
+    }, SERVICE, PAYMENTS)
     card = checkpoint(state, "demo-card", lambda: call(
         "POST", "/api/v1/payment-methods", {"providerToken": card_token}, owner)["id"])
     if not call("GET", "/api/v1/subscriptions/me", headers=owner).get("proActive"):

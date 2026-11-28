@@ -47,7 +47,7 @@ for attempt in range(30):
             raise
         time.sleep(2)
 
-provision("billing-service", os.environ["MQTT_BILLING_PASSWORD"], [
+provision("payments-service", os.environ["MQTT_PAYMENTS_PASSWORD"], [
     ("publish", "smartgn/events/payments/#"),
     ("subscribe", "smartgn/events/support/#"),
     ("subscribe", "smartgn/events/installation/#"),

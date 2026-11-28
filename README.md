@@ -2,7 +2,7 @@
 
 ## Overview
 
-Public entry point for IAM, Installation, Support, Billing, Alerting and Monitoring. Validates IAM tokens, applies CORS and rate limits, and forwards documented routes to their owning services.
+Public entry point for IAM, Installation, Support, Payments, Alerting and Monitoring. Validates IAM tokens, applies CORS and rate limits, and forwards documented routes to their owning services.
 
 **Stack**  Node.js 22, Express.
 
@@ -37,14 +37,12 @@ workspace/
 
 Use the coordinated `develop` revisions for the handoff. From
 `workspace`, run the following in PowerShell 7. The first script creates
-the local credentials and builds the backend images. Stop at any error
-before continuing.
+the local credentials, builds the twelve application images and starts
+the integrated stack.
 
 ```powershell
 $gateway = './SmartGN/smartgn-api-gateway'
 & "$gateway/scripts/start-integrated.ps1"
-docker build -t smartgn-frontend:local ./smartgn-frontend
-docker compose --env-file "$gateway/.local/integrated.env" -f "$gateway/compose.integration.yml" -f ./smartgn-frontend/compose.frontend.yml up -d --no-build --wait --wait-timeout 300
 & "$gateway/scripts/seed-local.ps1"
 & "$gateway/scripts/smoke-integrated.ps1"
 ```
